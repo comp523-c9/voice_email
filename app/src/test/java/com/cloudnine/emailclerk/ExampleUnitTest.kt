@@ -1,5 +1,4 @@
-package com.example.quickstart
-
+package com.cloudnine.emailclerk;
 import org.junit.Test
 
 import org.junit.Assert.*

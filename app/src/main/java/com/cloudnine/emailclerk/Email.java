@@ -1,4 +1,4 @@
-package com.example.quickstart;
+package com.cloudnine.emailclerk;
 
 public class Email {
 

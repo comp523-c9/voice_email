@@ -1,4 +1,4 @@
-package com.example.quickstart
+package com.cloudnine.emailclerk;
 
 import android.support.test.InstrumentationRegistry
 import android.support.test.runner.AndroidJUnit4

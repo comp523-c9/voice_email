@@ -1,4 +1,4 @@
-package com.example.quickstart;
+package com.cloudnine.emailclerk;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
