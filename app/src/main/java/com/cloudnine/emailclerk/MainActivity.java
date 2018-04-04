@@ -17,6 +17,8 @@ import com.google.api.services.gmail.model.*;
 
 import android.Manifest;
 import android.accounts.AccountManager;
+import android.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.ProgressDialog;
@@ -29,13 +31,18 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
+import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.text.method.ScrollingMovementMethod;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -46,8 +53,8 @@ import java.util.Locale;
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 
-public class MainActivity extends Activity implements EasyPermissions.PermissionCallbacks {
-
+public class MainActivity extends AppCompatActivity implements EasyPermissions.PermissionCallbacks {
+    Toolbar toolbar;
     // Instantiate some display elements
     GoogleAccountCredential mCredential;
     private static TextView mOutputText;
@@ -76,12 +83,15 @@ public class MainActivity extends Activity implements EasyPermissions.Permission
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+
         // Create a layout
-        LinearLayout activityLayout = new LinearLayout(this);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
-        activityLayout.setLayoutParams(lp);
-        activityLayout.setOrientation(LinearLayout.VERTICAL);
-        activityLayout.setPadding(16, 16, 16, 16);
+        //LinearLayout activityLayout = new LinearLayout(this);
+        setContentView(R.layout.activity_main);
+        LinearLayout activityLayout = (LinearLayout) findViewById(R.id.mainlayout);
+        //LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
+        //activityLayout.setLayoutParams(lp);
+        //activityLayout.setOrientation(LinearLayout.VERTICAL);
+        activityLayout.setPadding(16, 26, 16, 30);
         ViewGroup.LayoutParams tlp = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
 
         // Create button to call api
@@ -111,8 +121,10 @@ public class MainActivity extends Activity implements EasyPermissions.Permission
         mProgress = new ProgressDialog(this);
         mProgress.setMessage("Fetching New Emails ...");
 
-        setContentView(activityLayout);
-
+        //setContentView(R.layout.activity_main);
+        toolbar = (Toolbar)findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setHomeButtonEnabled(true);
         // Initialize credentials and service object.
         mCredential = GoogleAccountCredential.usingOAuth2(
                 getApplicationContext(), Arrays.asList(SCOPES))
@@ -126,6 +138,26 @@ public class MainActivity extends Activity implements EasyPermissions.Permission
             }
         });
     }
+    @Override
+    public boolean onCreateOptionsMenu (Menu menu)  {
+        MenuInflater menuInflater = getMenuInflater();
+        menuInflater.inflate(R.menu.menu_main,menu);
+
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int res_id = item.getItemId();
+        if(res_id==R.id.settings)
+        {
+           // Toast.makeText(getApplicationContext(),"selected",Toast.LENGTH_LONG).show();
+            Intent settingIntent = new Intent(getApplicationContext(),SettingsController.class);
+            startActivity(settingIntent);
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
 
     /**
      * Attempt to call the API, after verifying that all the preconditions are
