@@ -71,7 +71,7 @@ public class EmailController extends Activity implements EasyPermissions.Permiss
     MainActivity mc;
 
     // Constructor
-    EmailController() {}
+    public EmailController() {}
 
     EmailController(Context context, MainActivity mc) {
 
@@ -96,6 +96,7 @@ public class EmailController extends Activity implements EasyPermissions.Permiss
                 getApplicationContext(), Arrays.asList(SCOPES))
                 .setBackOff(new ExponentialBackOff());
 
+        setContentView(R.layout.email_controller);
         getNewEmails();
     }
 

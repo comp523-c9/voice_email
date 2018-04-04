@@ -48,63 +48,18 @@ import pub.devrel.easypermissions.EasyPermissions;
 
 public class MainActivity extends Activity {
 
-    // Instantiate some display elements
-    public static TextView mOutputText;
-    private Button mCallApiButton;
-    ProgressDialog mProgress;
-
-    private EmailController ec;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // Create a layout
-        LinearLayout activityLayout = new LinearLayout(this);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
-        activityLayout.setLayoutParams(lp);
-        activityLayout.setOrientation(LinearLayout.VERTICAL);
-        activityLayout.setPadding(16, 16, 16, 16);
-        ViewGroup.LayoutParams tlp = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-
-        // Create button to call api
-        mCallApiButton = new Button(this);
-        mCallApiButton.setText("Test App");
-        mCallApiButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mCallApiButton.setEnabled(false);
-                mOutputText.setText("");
-                // TODO
-                //ec = new EmailController(getApplicationContext());
-                mCallApiButton.setEnabled(true);
-            }
-        });
-        activityLayout.addView(mCallApiButton);
-
-        // Make box for output text
-        mOutputText = new TextView(this);
-        mOutputText.setLayoutParams(tlp);
-        mOutputText.setPadding(16, 16, 16, 16);
-        mOutputText.setVerticalScrollBarEnabled(true);
-        mOutputText.setMovementMethod(new ScrollingMovementMethod());
-        mOutputText.setText(
-                "Click the 'Test App' button to test the API.");
-        activityLayout.addView(mOutputText);
-
-        mProgress = new ProgressDialog(this);
-        mProgress.setMessage("Fetching New Emails ...");
-
-        setContentView(activityLayout);
+        setContentView(R.layout.activity_main);
     }
 
-    protected void onStart() {
-        super.onStart();
+    protected void onResume() {
+        super.onResume();
 
         Intent i= new Intent(MainActivity.this, EmailController.class);
-        //i.putExtra("MA_CONTEXT", getApplicationContext());
         this.startActivity(i);
-
+        //i.putExtra("MA_CONTEXT", getApplicationContext());
         //sc = new EmailController(getApplicationContext(), this);
     }
 }
