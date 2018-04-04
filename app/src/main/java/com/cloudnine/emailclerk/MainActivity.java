@@ -80,7 +80,6 @@ public class MainActivity extends Activity {
                 mCallApiButton.setEnabled(true);
             }
         });
-        ec = new EmailController(getApplicationContext(), this);
         activityLayout.addView(mCallApiButton);
 
         // Make box for output text
@@ -97,5 +96,15 @@ public class MainActivity extends Activity {
         mProgress.setMessage("Fetching New Emails ...");
 
         setContentView(activityLayout);
+    }
+
+    protected void onStart() {
+        super.onStart();
+
+        Intent i= new Intent(MainActivity.this, EmailController.class);
+        //i.putExtra("MA_CONTEXT", getApplicationContext());
+        this.startActivity(i);
+
+        //sc = new EmailController(getApplicationContext(), this);
     }
 }

@@ -2,14 +2,19 @@ package com.cloudnine.emailclerk;
 
 import android.Manifest;
 import android.accounts.AccountManager;
+
+import android.content.Intent;
+import android.os.IBinder;
+import android.app.Service;
 import android.app.Activity;
+
 import android.app.Dialog;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
+import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
 
@@ -66,6 +71,8 @@ public class EmailController extends Activity implements EasyPermissions.Permiss
     MainActivity mc;
 
     // Constructor
+    EmailController() {}
+
     EmailController(Context context, MainActivity mc) {
 
         this.context = context;
@@ -74,6 +81,19 @@ public class EmailController extends Activity implements EasyPermissions.Permiss
         // Initialize credentials and service object.
         mCredential = GoogleAccountCredential.usingOAuth2(
                 context, Arrays.asList(SCOPES))
+                .setBackOff(new ExponentialBackOff());
+
+        getNewEmails();
+    }
+
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        //moveTaskToBack(true);
+
+        // Initialize credentials and service object.
+        mCredential = GoogleAccountCredential.usingOAuth2(
+                getApplicationContext(), Arrays.asList(SCOPES))
                 .setBackOff(new ExponentialBackOff());
 
         getNewEmails();
@@ -120,20 +140,19 @@ public class EmailController extends Activity implements EasyPermissions.Permiss
      */
     @AfterPermissionGranted(REQUEST_PERMISSION_GET_ACCOUNTS)
     private void chooseAccount() {
-        if (EasyPermissions.hasPermissions(context, Manifest.permission.GET_ACCOUNTS)) {
-            String accountName = getPreferences(0x0000).getString(PREF_ACCOUNT_NAME, null);
+        boolean test = EasyPermissions.hasPermissions(this, Manifest.permission.GET_ACCOUNTS);
+        if (EasyPermissions.hasPermissions(this, Manifest.permission.GET_ACCOUNTS)) {
+            String accountName = getPreferences(Context.MODE_PRIVATE).getString(PREF_ACCOUNT_NAME, null);
             if (accountName != null) {
                 mCredential.setSelectedAccountName(accountName);
                 getNewEmails();
             } else {
                 // Start a dialog from which the user can choose an account
-                startActivityForResult(
-                        mCredential.newChooseAccountIntent(),
-                        REQUEST_ACCOUNT_PICKER);
+                startActivityForResult(mCredential.newChooseAccountIntent(), REQUEST_ACCOUNT_PICKER);
             }
         } else {
             // Request the GET_ACCOUNTS permission via a user dialog
-            EasyPermissions.requestPermissions(mc, "This app needs to access your Google account (via Contacts).",
+            EasyPermissions.requestPermissions(this, "This app needs to access your Google account (via Contacts).",
                     REQUEST_PERMISSION_GET_ACCOUNTS, Manifest.permission.GET_ACCOUNTS);
             chooseAccount();
         }
@@ -244,7 +263,7 @@ public class EmailController extends Activity implements EasyPermissions.Permiss
      */
     private boolean isGooglePlayServicesAvailable() {
         GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
-        final int connectionStatusCode = apiAvailability.isGooglePlayServicesAvailable(context);
+        final int connectionStatusCode = apiAvailability.isGooglePlayServicesAvailable(this);
         return connectionStatusCode == ConnectionResult.SUCCESS;
     }
 
@@ -289,7 +308,7 @@ public class EmailController extends Activity implements EasyPermissions.Permiss
             JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
             mService = new com.google.api.services.gmail.Gmail.Builder(
                     transport, jsonFactory, credential)
-                    .setApplicationName("Gmail API Android Quickstart")
+                    .setApplicationName("Email Clerk")
                     .build();
         }
 
@@ -369,6 +388,7 @@ public class EmailController extends Activity implements EasyPermissions.Permiss
                             ((GooglePlayServicesAvailabilityIOException) mLastError)
                                     .getConnectionStatusCode());
                 } else if (mLastError instanceof UserRecoverableAuthIOException) {
+                    //new startActivity(mLastError).getIntent());
                     startActivityForResult(
                             ((UserRecoverableAuthIOException) mLastError).getIntent(),
                             EmailController.REQUEST_AUTHORIZATION); //TODO was mainactivity
@@ -381,4 +401,15 @@ public class EmailController extends Activity implements EasyPermissions.Permiss
             }
         }
     }
+//    public class startActivity extends Activity {
+//
+//        startActivity(Intent i) {
+//            startActivityForResult((i, EmailController.REQUEST_AUTHORIZATION);
+//        }
+//
+//        @Override
+//        protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+//            super.onActivityResult(requestCode, resultCode, data);
+//        }
+//    }
 }
