@@ -6,7 +6,7 @@ public class StateController {
 
     private MainActivity master;
     //private SettingsController settings;
-    private VoiceController voice;
+    private VoiceController voiceController;
     private EmailController emailController;
 
     public enum MainState { OPENED, LISTING, READING, COMPOSING }
@@ -22,7 +22,7 @@ public class StateController {
         this.state = MainState.OPENED;
 
         emailController = new EmailController(this, mService);
-        voice = new VoiceController(master.getApplicationContext(), master);
+        voiceController = new VoiceController(master.getApplicationContext(), master);
         //settings = new SettingsController();
 
         /** THIS IS A TEST TO FETCH EMAILS WITH THE EMAIL CONTROLLER **/
@@ -33,7 +33,8 @@ public class StateController {
     public void onEmailsRetrieved() {
         Email curEmail = emails.get(0);
         String output = "Hey dude, you got a new email from " + curEmail.getSenderName() + " with the subject " + curEmail.getSubject();
-        VoiceController.textToSpeech(output);
+        voiceController.textToSpeech(output);
+        voiceController.startListening();
     }
 
 //    public void sendCommand(String command)
