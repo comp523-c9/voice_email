@@ -70,7 +70,7 @@ public class MainActivity extends Activity {
                 //GmailAuth.SendSerializedService sss = (GmailAuth.SendSerializedService) getIntent().getSerializableExtra("serialize_data");
                 //StateController stateController = new StateController(sss.getmService());
                 com.google.api.services.gmail.Gmail mService = GmailAuth.mService;
-                StateController stateController = new StateController(mService);
+                StateController stateController = new StateController(this, mService);
             }
         }
     }
