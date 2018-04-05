@@ -7,26 +7,30 @@ public class StateController {
     private MainActivity master;
     //private SettingsController settings;
     //private VoiceController voice;
-    private EmailController emailControler;
+    private EmailController emailController;
 
     public enum MainState { OPENED, LISTING, READING, COMPOSING }
     public MainState state;
 
     private com.google.api.services.gmail.Gmail mService;
+    public List<Email> emails;
 
     StateController(com.google.api.services.gmail.Gmail mService) {
         this.mService = mService;
         this.master = master;
         this.state = MainState.OPENED;
 
-        emailControler = new EmailController(mService);
+        emailController = new EmailController(this, mService);
         //voice = new VoiceController(this);
         //settings = new SettingsController();
 
         /** THIS IS A TEST TO FETCH EMAILS WITH THE EMAIL CONTROLLER **/
-        emailControler.getNewEmails();
-        //List<Email> emails = emailControler.getNewEmails();
-        int x = 4;
+        //emailControler.getNewEmails();
+        emailController.getNewEmails();
+    }
+
+    public void onEmailsRetrieved() {
+        emails.get(0);
     }
 
 //    public void sendCommand(String command)

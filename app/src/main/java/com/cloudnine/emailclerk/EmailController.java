@@ -1,6 +1,8 @@
 package com.cloudnine.emailclerk;
 
 import android.os.AsyncTask;
+
+import java.lang.Thread;
 import java.util.*;
 import java.io.*;
 
@@ -20,21 +22,15 @@ public class EmailController {
     private com.google.api.services.gmail.Gmail mService;
     public List<Email> emails;
     volatile boolean finished = false;
+    StateController stateController; // Reference to StateController
 
-    EmailController(com.google.api.services.gmail.Gmail mService) {
+    EmailController(StateController stateController, com.google.api.services.gmail.Gmail mService) {
+        this.stateController = stateController;
         this.mService = mService;
     }
 
     public void getNewEmails() {
         new AsyncGetEmails().execute();
-//        while(!this.finished) {
-//            try {
-//                java.lang.Thread.sleep(1000);
-//            } catch(InterruptedException e) {
-//
-//            }
-//        }
-//        return emails;
     }
 
     //TODO THIS IS WHERE ALL OF THE GMAIL METHODS WILL GO
@@ -47,19 +43,6 @@ public class EmailController {
 //        //textToSpeech(response);
 //        //textToSpeech(question);
 //    }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     private class AsyncGetEmails extends AsyncTask<Void, Void, List<Email>> {
 
@@ -121,8 +104,8 @@ public class EmailController {
             if (output == null || output.size() == 0) {
                 //TODO
             } else {
-                emails = output;
-                finished = true;
+                stateController.emails = output;
+                stateController.onEmailsRetrieved();
             }
         }
     }
