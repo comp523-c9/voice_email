@@ -27,6 +27,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.widget.LinearLayout;
 import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
@@ -48,18 +49,29 @@ import pub.devrel.easypermissions.EasyPermissions;
 
 public class MainActivity extends Activity {
 
+    static final int PASS_GMAIL_OBJECT = 1;
+    static final int RESULT_OKAY = 2;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // Start Gmail Authentication Activity
+        Intent i= new Intent(MainActivity.this, GmailAuth.class);
+        this.startActivityForResult(i, PASS_GMAIL_OBJECT);
+
     }
 
-    protected void onResume() {
-        super.onResume();
-
-        Intent i= new Intent(MainActivity.this, EmailController.class);
-        this.startActivity(i);
-        //i.putExtra("MA_CONTEXT", getApplicationContext());
-        //sc = new EmailController(getApplicationContext(), this);
+    // Get mService Gmail object from Gmail Authentication Activity end
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == PASS_GMAIL_OBJECT) {
+            if (resultCode == RESULT_OK) {
+                //GmailAuth.SendSerializedService sss = (GmailAuth.SendSerializedService) getIntent().getSerializableExtra("serialize_data");
+                //StateController stateController = new StateController(sss.getmService());
+                com.google.api.services.gmail.Gmail mService = GmailAuth.mService;
+                StateController stateController = new StateController(mService);
+            }
+        }
     }
 }
