@@ -105,17 +105,6 @@ public class GmailAuth extends Activity implements EasyPermissions.PermissionCal
             //mOutputText.setText("No network connection available.");
         } else {
             assignGmailObject(mCredential);
-//            SendSerializedService sss = new SendSerializedService(mCredential);
-//            Intent data = new Intent();
-//            data.putExtra("serialize_data", sss);
-//
-//            if (getParent() == null) {
-//                setResult(Activity.RESULT_OK, data);
-//            } else {
-//                getParent().setResult(Activity.RESULT_OK, data);
-//            }
-//
-//            finish();
         }
     }
 
@@ -313,23 +302,59 @@ public class GmailAuth extends Activity implements EasyPermissions.PermissionCal
 
     protected void assignGmailObject(GoogleAccountCredential credential) {
         HttpTransport transport = AndroidHttp.newCompatibleTransport();
-            JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
+        JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
 
-            this.mService = new com.google.api.services.gmail.Gmail.Builder(
-                    transport, jsonFactory, credential)
-                    .setApplicationName("Email Clerk")
-                    .build();
+        this.mService = new com.google.api.services.gmail.Gmail.Builder(
+                transport, jsonFactory, credential)
+                .setApplicationName("Email Clerk")
+                .build();
 
         Intent data = new Intent();
-            //data.putExtra("serialize_data", sss);
+        if (getParent() == null) {
+            setResult(Activity.RESULT_OK, data);
+        } else {
+            getParent().setResult(Activity.RESULT_OK, data);
+        }
 
-            if (getParent() == null) {
-                setResult(Activity.RESULT_OK, data);
-            } else {
-                getParent().setResult(Activity.RESULT_OK, data);
+        finish();
+    }
+
+    private class TestAPICall extends AsyncTask<Void, Void, ListMessagesResponse> {
+
+        private com.google.api.services.gmail.Gmail mService = null;
+        private Exception mLastError = null;
+
+        TestAPICall(com.google.api.services.gmail.Gmail mService) {
+            this.mService = mService;
+        }
+
+        @Override
+        protected ListMessagesResponse doInBackground(Void... params) {
+            try {
+                return testAPICall();
+            } catch (Exception e) {
+                mLastError = e;
+                cancel(true);
+                return null;
             }
+        }
 
-            finish();
+        private ListMessagesResponse testAPICall() throws IOException {
 
+            ListMessagesResponse listResponse = mService.users().messages().list("me").execute();
+            return listResponse;
+        }
+
+        @Override
+        protected void onCancelled() {
+            if (mLastError != null) {
+                if (mLastError instanceof GooglePlayServicesAvailabilityIOException) {
+                    showGooglePlayServicesAvailabilityErrorDialog(((GooglePlayServicesAvailabilityIOException) mLastError)
+                            .getConnectionStatusCode());
+                } else if (mLastError instanceof UserRecoverableAuthIOException) {
+                    startActivityForResult(((UserRecoverableAuthIOException) mLastError).getIntent(), GmailAuth.REQUEST_AUTHORIZATION);
+                }
+            }
+        }
     }
 }
