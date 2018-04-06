@@ -27,15 +27,17 @@ public class StateController {
 
         /** THIS IS A TEST TO FETCH EMAILS WITH THE EMAIL CONTROLLER **/
         //emailControler.getNewEmails();
-        emailController.getNewEmails();
+        emailController.getNewEmails(1);
     }
 
     public void onEmailsRetrieved() {
         Email curEmail = emails.get(0);
-        String output = "Hey dude, you got a new email from " + curEmail.getSenderName() + " with the subject " + curEmail.getSubject();
-        voiceController.textToSpeech(output);
-        voiceController.startListening();
+        //String output = "Hey dude, you got a new email from " + curEmail.getSenderName() + " with the subject " + curEmail.getSubject();
+        //voiceController.textToSpeech(output);
+        //voiceController.startListening();
+        emailController.deleteEmail(curEmail.getThreadId());
     }
+
 
 //    public void sendCommand(String command)
 //    {
