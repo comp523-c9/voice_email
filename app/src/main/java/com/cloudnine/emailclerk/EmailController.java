@@ -27,6 +27,9 @@ import com.google.api.client.googleapis.json.GoogleJsonError;
 import com.google.api.client.http.HttpHeaders;
 import com.google.api.services.gmail.*;
 import com.google.api.services.gmail.model.*;
+
+import org.json.JSONObject;
+
 /**
  * Created by alecs on 4/4/2018.
  */
@@ -130,10 +133,25 @@ public class EmailController {
                 Message curMessage = messages.get(i);
                 String id = curMessage.getId();
                 String threadId = curMessage.getThreadId();
-                String subject = curMessage.getPayload().getHeaders().get(0).getValue(); //TODO
-                String senderName = curMessage.getPayload().getHeaders().get(0).getValue(); //TODO
-                String senderEmail = curMessage.getPayload().getHeaders().get(0).getValue(); //TODO
-                String messageBody = "";
+                String subject = "";
+                String sender = "";
+
+
+                List<MessagePartHeader> headers = curMessage.getPayload().getHeaders();
+                for(MessagePartHeader header:headers){
+                    if (subject == "" || sender == "") {
+                        String name = header.getName();
+                        if(name.equals("Subject")) {
+                            subject = header.getValue();
+                        } else if (name.equals("From")) {
+                            sender = header.getValue();
+                        }
+                    }
+                }
+
+                String senderName = sender.substring(0, sender.indexOf("<")-1);
+                String senderEmail = sender.substring((sender.indexOf("<")+1), sender.indexOf(">"));
+                String messageBody = curMessage.getSnippet();
                 //String messageBody = StringUtils.newStringUtf8(Base64.decodeBase64(curMessage.getPayload().getParts().get(0).getBody().getData().trim().toString())); //TODO
                 messageBody = messageBody.replaceAll("(\r\n|\n\r|\n|\r)", "");
 
