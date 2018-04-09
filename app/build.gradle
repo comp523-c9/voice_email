@@ -11,6 +11,7 @@ android {
         targetSdkVersion 25
         versionCode 1
         versionName "1.0"
+        multiDexEnabled true
     }
     buildTypes {
         release {
@@ -22,9 +23,8 @@ android {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile fileTree(include: ['*.jar'], dir: 'libs')
     compile 'com.android.support:appcompat-v7:25.0.1'
-    compile group: 'javax.mail', name: 'mail', version: '1.4.7'
     compile 'com.google.android.gms:play-services-auth:11.0.4'
     compile 'pub.devrel:easypermissions:0.3.0'
     compile('com.google.api-client:google-api-client-android:1.23.0') {
@@ -34,7 +34,19 @@ dependencies {
         exclude group: 'org.apache.httpcomponents'
     }
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
+    //compile group: 'javax.mail', name: 'mail', version: '1.4'
+    //compile group: 'javax.mail', name: 'javax.mail-api', version: '1.5.1'
+    //compile group: 'javax.activation', name: 'activation', version: '1.1.1'
+    implementation files('libs/activation.jar')
+    implementation files('libs/additionnal.jar')
+    implementation files('libs/mail.jar')
+    //implementation files('libs/javamail-mailapi-1.4.2.jar')
+    //implementation files('libs/javamail-smtp-1.4.2.jar')
 }
 repositories {
     mavenCentral()
+    maven {
+        url 'https://maven.google.com/'
+        name 'Google'
+    }
 }
