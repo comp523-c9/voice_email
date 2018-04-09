@@ -72,11 +72,14 @@ public class EmailController {
         new AsyncDeleteEmail().execute(params);
     }
 
-    public void sendEmail(String to, String from, String subject, String bodyText) {
+    public void sendEmail(Email email, String bodyText) {
         List<String> paramsList = new ArrayList<String>();
-        paramsList.add(to);
-        paramsList.add(from);
-        paramsList.add(subject);
+        paramsList.add(email.getID());
+        paramsList.add(email.getReceiverAddress());
+        paramsList.add(email.getReceiverName());
+        paramsList.add(email.getSenderAddress());
+        paramsList.add(email.getSenderName());
+        paramsList.add(email.getSubject());
         paramsList.add(bodyText);
 
         String[] params = new String[paramsList.size()];
@@ -143,29 +146,35 @@ public class EmailController {
                 com.google.api.services.gmail.model.Message curMessage = messages.get(i);
                 String id = curMessage.getId();
                 String threadId = curMessage.getThreadId();
-                String subject = "";
+                String receiver = "";
                 String sender = "";
+                String subject = "";
 
 
                 List<MessagePartHeader> headers = curMessage.getPayload().getHeaders();
                 for(MessagePartHeader header:headers){
-                    if (subject == "" || sender == "") {
+                    if (subject == "" || sender == "" || receiver == "") {
                         String name = header.getName();
                         if(name.equals("Subject")) {
                             subject = header.getValue();
                         } else if (name.equals("From")) {
                             sender = header.getValue();
+                        } else if (name.equals("To")) {
+                            receiver = header.getValue();
                         }
                     }
                 }
 
+                String receiverAddress = receiver.substring((receiver.indexOf("<")+1), receiver.indexOf(">"));
+                String receiverName = receiver.substring(0, receiver.indexOf("<")-1);
+                String senderAddress = sender.substring((sender.indexOf("<")+1), sender.indexOf(">"));
                 String senderName = sender.substring(0, sender.indexOf("<")-1);
-                String senderEmail = sender.substring((sender.indexOf("<")+1), sender.indexOf(">"));
+
                 String messageBody = curMessage.getSnippet();
                 //String messageBody = StringUtils.newStringUtf8(Base64.decodeBase64(curMessage.getPayload().getParts().get(0).getBody().getData().trim().toString())); //TODO
-                messageBody = messageBody.replaceAll("(\r\n|\n\r|\n|\r)", "");
+                //messageBody = messageBody.replaceAll("(\r\n|\n\r|\n|\r)", "");
 
-                emailList.add(new Email(id, threadId, subject, senderName, senderEmail, messageBody));
+                emailList.add(new Email(id, threadId, receiverAddress, receiverName, senderAddress, senderName, subject, messageBody));
             }
             return emailList;
         }
@@ -201,20 +210,30 @@ public class EmailController {
         }
 
         private void asyncSendEmail(String[] params) {
-            String to = params[0];
-            String from = params[1];
-            String subject = params[2];
-            String bodyText = params[3];
+            String id = params[0];
+            String fromAddress = params[2];
+            String fromName = params[3];
+            String toAddress = params[4];
+            String toName = params[5];
+            String subject = params[6];
+            String bodyText = params[7];
 
             Properties props = new Properties();
             Session session = Session.getDefaultInstance(props, null);
 
             try {
                 MimeMessage email = new MimeMessage(session);
-                email.setFrom(new InternetAddress(from));
-                email.addRecipient(javax.mail.Message.RecipientType.TO, new InternetAddress(to));
-                email.setSubject("testing123");
-                email.setText("testing321");
+                email.setFrom(new InternetAddress(fromAddress, fromName));
+                email.addRecipient(javax.mail.Message.RecipientType.TO, new InternetAddress(toAddress, toName));
+                if (subject.substring(0, 3).equals("RE:") || subject.substring(0, 3).equals("Re:")) {
+                    email.setSubject(subject);
+                } else {
+                    subject = "Re: " + subject;
+                    email.setSubject(subject);
+                }
+                email.setText(bodyText);
+                email.setHeader("In-Reply-To", id);
+                email.setHeader("References", id);
 
                 ByteArrayOutputStream buffer = new ByteArrayOutputStream();
                 email.writeTo(buffer);

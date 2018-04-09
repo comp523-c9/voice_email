@@ -32,7 +32,7 @@ public class StateController {
 
     public void onEmailsRetrieved() {
         Email curEmail = emails.get(0);
-        emailController.sendEmail("ajschleic@gmail.com", "ajschleic@gmail.com", "testing", "test body message");
+        emailController.sendEmail(curEmail, "this is the message body of a reply");
     }
 
 

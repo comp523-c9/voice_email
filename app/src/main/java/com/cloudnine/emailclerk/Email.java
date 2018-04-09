@@ -4,42 +4,55 @@ public class Email {
 
     private String id;
     private String threadId;
-    private String subject;
+    private String receiverAddress;
+    private String receiverName;
+    private String senderAddress;
     private String senderName;
-    private String senderEmail;
+    private String subject;
     private String message;
 
     // Constructor
-    Email(String id, String threadId, String subject, String senderName, String senderEmail, String message) {
+    Email(String id,
+          String threadId,
+          String receiverAddress,
+          String receiverName,
+          String senderAddress,
+          String senderName,
+          String subject,
+          String message)
+    {
         this.id = id;
         this.threadId = threadId;
-        this.subject = subject;
+        this.receiverAddress = receiverAddress;
+        this.receiverName = receiverName;
+        this.senderAddress = senderAddress;
         this.senderName = senderName;
-        this.senderEmail = senderEmail;
+        this.subject = subject;
         this.message = message;
     }
 
-    // Getters and Setters
-    public String getID() {
-        return id;
-    }
+    // Getters
+    public String getID() { return id; }
 
     public String getThreadId() { return threadId; }
 
-    public String getSubject() {
-        return subject;
+    public String getReceiverAddress() { return receiverAddress; }
+
+    public String getReceiverName() { return receiverName; }
+
+    public String getSenderAddress() {
+        return senderAddress;
     }
 
     public String getSenderName() {
         return senderName;
     }
 
-    public String getSenderEmail() {
-        return senderEmail;
+    public String getSubject() {
+        return subject;
     }
 
     public String getMessage() {
         return message;
     }
-
 }
