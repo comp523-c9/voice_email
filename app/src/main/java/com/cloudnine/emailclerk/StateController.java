@@ -32,10 +32,7 @@ public class StateController {
 
     public void onEmailsRetrieved() {
         Email curEmail = emails.get(0);
-        //String output = "Hey dude, you got a new email from " + curEmail.getSenderName() + " with the subject " + curEmail.getSubject();
-        //voiceController.textToSpeech(output);
-        //voiceController.startListening();
-        emailController.deleteEmail(curEmail.getThreadId());
+        emailController.sendEmail("ajschleic@gmail.com", "ajschleic@gmail.com", "testing", "test body message");
     }
 
 

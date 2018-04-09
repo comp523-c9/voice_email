@@ -3,7 +3,6 @@ package com.cloudnine.emailclerk;
 import android.os.AsyncTask;
 
 import javax.mail.BodyPart;
-//import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.SendFailedException;
@@ -13,6 +12,15 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
+import javax.activation.DataHandler;
+import javax.activation.DataSource;
+import javax.mail.Message;
+import javax.mail.PasswordAuthentication;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+
 
 import java.util.*;
 import java.io.*;
@@ -27,6 +35,8 @@ import com.google.api.client.googleapis.json.GoogleJsonError;
 import com.google.api.client.http.HttpHeaders;
 import com.google.api.services.gmail.*;
 import com.google.api.services.gmail.model.*;
+
+import java.io.ByteArrayOutputStream;
 
 import org.json.JSONObject;
 
@@ -72,7 +82,7 @@ public class EmailController {
         String[] params = new String[paramsList.size()];
         params = paramsList.toArray(params);
 
-        //new AsyncSendEmail()
+        new AsyncSendEmail().execute(params);
     }
 
     private class AsyncGetEmails extends AsyncTask<String, Void, List<Email>> {
@@ -106,8 +116,8 @@ public class EmailController {
             ListMessagesResponse listResponse = mService.users().messages().list("me").setMaxResults(new Long(num)).execute();
 
             final List<com.google.api.services.gmail.model.Message> messages = new ArrayList<com.google.api.services.gmail.model.Message>();
-            JsonBatchCallback<Message> callback = new JsonBatchCallback<com.google.api.services.gmail.model.Message>() {
-                public void onSuccess(Message message, HttpHeaders responseHeaders) {
+            JsonBatchCallback<com.google.api.services.gmail.model.Message> callback = new JsonBatchCallback<com.google.api.services.gmail.model.Message>() {
+                public void onSuccess(com.google.api.services.gmail.model.Message message, HttpHeaders responseHeaders) {
                     System.out.println("MessageThreadID:" + message.getThreadId());
                     System.out.println("MessageID:" + message.getId());
                     synchronized (messages) {
@@ -130,7 +140,7 @@ public class EmailController {
             batch.execute();
 
             for (int i=0; i<messages.size(); i++) {
-                Message curMessage = messages.get(i);
+                com.google.api.services.gmail.model.Message curMessage = messages.get(i);
                 String id = curMessage.getId();
                 String threadId = curMessage.getThreadId();
                 String subject = "";
@@ -180,17 +190,44 @@ public class EmailController {
         @Override
         protected Void doInBackground(String... params) {
 
-
-
-
             try {
-
+                asyncSendEmail(params);
             } catch (Exception e) {
                 mLastError = e;
                 cancel(true);
                 return null;
             }
             return null;
+        }
+
+        private void asyncSendEmail(String[] params) {
+            String to = params[0];
+            String from = params[1];
+            String subject = params[2];
+            String bodyText = params[3];
+
+            Properties props = new Properties();
+            Session session = Session.getDefaultInstance(props, null);
+
+            try {
+                MimeMessage email = new MimeMessage(session);
+                email.setFrom(new InternetAddress(from));
+                email.addRecipient(javax.mail.Message.RecipientType.TO, new InternetAddress(to));
+                email.setSubject("testing123");
+                email.setText("testing321");
+
+                ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                email.writeTo(buffer);
+                byte[] bytes = buffer.toByteArray();
+                String encodedEmail = Base64.encodeBase64URLSafeString(bytes);
+                com.google.api.services.gmail.model.Message message = new com.google.api.services.gmail.model.Message();
+                message.setRaw(encodedEmail);
+                mService.users().messages().send("me", message).execute();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+
         }
     }
 
