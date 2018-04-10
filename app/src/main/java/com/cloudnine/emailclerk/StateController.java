@@ -1,5 +1,8 @@
 package com.cloudnine.emailclerk;
 
+import android.app.Activity;
+import android.content.Context;
+
 import java.util.*;
 
 public class StateController {
@@ -15,14 +18,14 @@ public class StateController {
     private com.google.api.services.gmail.Gmail mService;
     public List<Email> emails;
 
-    StateController(MainActivity mainActivity, com.google.api.services.gmail.Gmail mService) {
+    StateController(MainActivity mainActivity, Context context, Activity activity, com.google.api.services.gmail.Gmail mService) {
         master = mainActivity;
         this.mService = mService;
         this.master = master;
         this.state = MainState.OPENED;
 
         emailController = new EmailController(this, mService);
-        voiceController = new VoiceController(master.getApplicationContext(), master);
+        voiceController = new VoiceController(context, activity, this);
         //settings = new SettingsController();
 
         /** THIS IS A TEST TO FETCH EMAILS WITH THE EMAIL CONTROLLER **/
@@ -32,7 +35,13 @@ public class StateController {
 
     public void onEmailsRetrieved() {
         Email curEmail = emails.get(0);
-        emailController.sendEmail(curEmail, "this is the message body of a reply");
+        voiceController.textToSpeech(curEmail.getSenderName() + curEmail.getSubject());
+        voiceController.startListening();
+       // emailController.sendEmail(curEmail, "this is the message body of a reply");
+    }
+    public void onCommandRead(){
+        voiceController.textToSpeech(emails.get(0).getMessage());
+        voiceController.stopListening();
     }
 
 

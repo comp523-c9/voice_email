@@ -41,20 +41,22 @@ public class VoiceController implements
     private Intent recognizerIntent;
     private ToggleButton button;
     private String LOG_TAG = "VoiceRecognitionActivity";
-    private Context context;
+    private static Context context;
     private Activity activity;
     public String partialResult = "testing";
     public String singlePartialResult = "";
     private static TextToSpeech tts;
+    private StateController stateController;
 
 //    private int count = 1;
 
-    public VoiceController(Context context, Activity activity)
+    public VoiceController(Context context, Activity activity, StateController stateController)
 
     {
 //        returnedText = (TextView) findViewById(R.id.textView1);
         this.context = context;
         this.activity = activity;
+        this.stateController = stateController;
         speech = SpeechRecognizer.createSpeechRecognizer(context);
         Log.i(LOG_TAG, "isRecognitionAvailable: " + SpeechRecognizer.isRecognitionAvailable(context));
         speech.setRecognitionListener(this);
@@ -70,15 +72,7 @@ public class VoiceController implements
                 (activity,
                         new String[]{Manifest.permission.RECORD_AUDIO},
                         REQUEST_RECORD_PERMISSION);
-        speech.startListening(recognizerIntent);
-
-        // Instantiate TTS Object
-        tts = new TextToSpeech(context, new TextToSpeech.OnInitListener() {
-            @Override
-            public void onInit(int i) {
-                tts.setLanguage(Locale.US);
-            }
-        });
+//        speech.startListening(recognizerIntent);
 
 //        if(button.isChecked()==true){
 //            speech.stopListening();
@@ -102,7 +96,21 @@ public class VoiceController implements
 //    }
 
     public static void textToSpeech(String input) {
-        tts.speak(input, TextToSpeech.QUEUE_ADD, null);
+        final String inputs = input;
+        if(tts == null) {
+            // Instantiate TTS Object
+            tts = new TextToSpeech(context, new TextToSpeech.OnInitListener() {
+                @Override
+                public void onInit(int i) {
+                    tts.setLanguage(Locale.US);
+                    tts.speak(inputs, TextToSpeech.QUEUE_FLUSH, null);
+                }
+            });
+        }
+        else{
+            tts.speak(input, TextToSpeech.QUEUE_FLUSH, null);
+
+        }
     }
 
     public String getSpeechResult(){
@@ -151,9 +159,14 @@ public class VoiceController implements
         for (String result : matches) {
             text += result + "\n";
             singlePartialResult = result;
+            //TODO logic for read and commands
+            if(singlePartialResult.contains("read")){
+                stateController.onCommandRead();
+            }
         }
 
         partialResult = text;
+
         //MainActivity.returnedText.setText(singlePartialResult + "," + text);
 
 //        count++;

@@ -27,6 +27,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.widget.LinearLayout;
 import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
@@ -47,7 +48,7 @@ import java.util.Locale;
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 
-public class MainActivity extends Activity {
+public class MainActivity extends AppCompatActivity {
 
     static final int PASS_GMAIL_OBJECT = 1;
     static final int RESULT_OKAY = 2;
@@ -70,7 +71,7 @@ public class MainActivity extends Activity {
                 //GmailAuth.SendSerializedService sss = (GmailAuth.SendSerializedService) getIntent().getSerializableExtra("serialize_data");
                 //StateController stateController = new StateController(sss.getmService());
                 com.google.api.services.gmail.Gmail mService = GmailAuth.mService;
-                StateController stateController = new StateController(this, mService);
+                StateController stateController = new StateController(this, MainActivity.this, MainActivity.this, mService);
             }
         }
     }
