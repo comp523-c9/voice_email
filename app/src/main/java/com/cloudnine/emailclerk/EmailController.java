@@ -85,7 +85,38 @@ public class EmailController {
         String[] params = new String[paramsList.size()];
         params = paramsList.toArray(params);
 
-        new AsyncSendEmail().execute(params);
+        new AsyncReplyToEmail().execute(params);
+    }
+
+    /** sendEmail() is overloaded. This is the 'compose' one **/
+    public void sendEmail(String toAddress, String fromAddress, String subject, String messageBody) {
+        List<String> paramsList = new ArrayList<String>();
+        paramsList.add(toAddress);
+        paramsList.add(fromAddress);
+        paramsList.add(subject);
+        paramsList.add(messageBody);
+
+        String[] params = new String[paramsList.size()];
+        params = paramsList.toArray(params);
+
+        new AsyncComposeEmail().execute(params);
+    }
+
+    /** This is the reply one **/
+    public void sendEmail(String toAddress, String fromAddress, String subject, String messageBody, Email email) {
+        List<String> paramsList = new ArrayList<String>();
+        paramsList.add(toAddress);
+        paramsList.add(email.getSenderName());
+        paramsList.add(fromAddress);
+        paramsList.add(email.getReceiverName());
+        paramsList.add(subject);
+        paramsList.add(messageBody);
+        paramsList.add(email.getID());
+
+        String[] params = new String[paramsList.size()];
+        params = paramsList.toArray(params);
+
+        new AsyncReplyToEmail().execute(params);
     }
 
     private class AsyncGetEmails extends AsyncTask<String, Void, List<Email>> {
@@ -188,11 +219,11 @@ public class EmailController {
         }
     }
 
-    private class AsyncSendEmail extends AsyncTask<String, Void, Void> {
+    private class AsyncReplyToEmail extends AsyncTask<String, Void, Void> {
 
         Exception mLastError;
 
-        AsyncSendEmail() {
+        AsyncReplyToEmail() {
             mLastError = null;
         }
 
@@ -200,7 +231,7 @@ public class EmailController {
         protected Void doInBackground(String... params) {
 
             try {
-                asyncSendEmail(params);
+                asyncReplyToEmail(params);
             } catch (Exception e) {
                 mLastError = e;
                 cancel(true);
@@ -209,14 +240,14 @@ public class EmailController {
             return null;
         }
 
-        private void asyncSendEmail(String[] params) {
-            String id = params[0];
+        private void asyncReplyToEmail(String[] params) {
+            String toAddress = params[0];
+            String toName = params[1];
             String fromAddress = params[2];
             String fromName = params[3];
-            String toAddress = params[4];
-            String toName = params[5];
-            String subject = params[6];
-            String bodyText = params[7];
+            String subject = params[4];
+            String messageBody = params[5];
+            String id = params[6];
 
             Properties props = new Properties();
             Session session = Session.getDefaultInstance(props, null);
@@ -225,13 +256,8 @@ public class EmailController {
                 MimeMessage email = new MimeMessage(session);
                 email.setFrom(new InternetAddress(fromAddress, fromName));
                 email.addRecipient(javax.mail.Message.RecipientType.TO, new InternetAddress(toAddress, toName));
-                if (subject.substring(0, 3).equals("RE:") || subject.substring(0, 3).equals("Re:")) {
-                    email.setSubject(subject);
-                } else {
-                    subject = "Re: " + subject;
-                    email.setSubject(subject);
-                }
-                email.setText(bodyText);
+                email.setSubject(subject);
+                email.setText(messageBody);
                 email.setHeader("In-Reply-To", id);
                 email.setHeader("References", id);
 
@@ -250,6 +276,56 @@ public class EmailController {
         }
     }
 
+    private class AsyncComposeEmail extends AsyncTask<String, Void, Void> {
+
+        Exception mLastError;
+
+        AsyncComposeEmail() {
+            mLastError = null;
+        }
+
+        @Override
+        protected Void doInBackground(String... params) {
+
+            try {
+                asyncComposeEmail(params);
+            } catch (Exception e) {
+                mLastError = e;
+                cancel(true);
+                return null;
+            }
+            return null;
+        }
+
+        private void asyncComposeEmail(String[] params) {
+            String toAddress = params[0];
+            String fromAddress = params[1];
+            String subject = params[2];
+            String messageBody = params[3];;
+
+            Properties props = new Properties();
+            Session session = Session.getDefaultInstance(props, null);
+
+            try {
+                MimeMessage email = new MimeMessage(session);
+                email.setFrom(new InternetAddress(fromAddress)); //TODO also add fromName
+                email.addRecipient(javax.mail.Message.RecipientType.TO, new InternetAddress(toAddress)); //TODO also add toName
+                email.setSubject(subject);
+                email.setText(messageBody);
+
+                ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                email.writeTo(buffer);
+                byte[] bytes = buffer.toByteArray();
+                String encodedEmail = Base64.encodeBase64URLSafeString(bytes);
+                com.google.api.services.gmail.model.Message message = new com.google.api.services.gmail.model.Message();
+                message.setRaw(encodedEmail);
+                mService.users().messages().send("me", message).execute();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     private class AsyncDeleteEmail extends AsyncTask<String, Void, Void> {
 
         Exception mLastError;
@@ -262,7 +338,7 @@ public class EmailController {
         protected Void doInBackground(String... threadId) {
 
             try {
-                mService.users().threads().delete("me", threadId[0]).execute();
+                mService.users().messages().trash("me", threadId[0]).execute();
             } catch (Exception e) {
                 mLastError = e;
                 cancel(true);
