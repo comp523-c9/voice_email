@@ -11,21 +11,22 @@ public class StateController {
     //private SettingsController settings;
     private VoiceController voiceController;
     private EmailController emailController;
+    private String[] dummyStringList;
 
     public enum MainState { OPENED, LISTING, READING, COMPOSING }
     public MainState state;
 
     private com.google.api.services.gmail.Gmail mService;
     public List<Email> emails;
-
+    private int iterator;
     StateController(MainActivity mainActivity, Context context, Activity activity, com.google.api.services.gmail.Gmail mService) {
         master = mainActivity;
         this.mService = mService;
         this.master = master;
         this.state = MainState.OPENED;
-
+        iterator = 0;
         emailController = new EmailController(this, mService);
-        voiceController = new VoiceController(context, activity, this);
+        voiceController = new VoiceController(context, activity, this, dummyStringList );
         //settings = new SettingsController();
 
         /** THIS IS A TEST TO FETCH EMAILS WITH THE EMAIL CONTROLLER **/
@@ -41,7 +42,14 @@ public class StateController {
     }
     public void onCommandRead(){
         voiceController.textToSpeech(emails.get(0).getMessage());
-        voiceController.stopListening();
+    }
+    public void onCommandSkip(){
+        iterator++;
+//        Email curEmail = emails.get(iterator);
+        voiceController.textToSpeech("skipped email");
+//        voiceController.textToSpeech(curEmail.getSenderName() + curEmail.getSubject());
+        voiceController.startListening();
+
     }
 
 

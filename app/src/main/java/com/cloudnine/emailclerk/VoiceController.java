@@ -47,16 +47,21 @@ public class VoiceController implements
     public String singlePartialResult = "";
     private static TextToSpeech tts;
     private StateController stateController;
+    private String[] commandList;
+    private String[] commandBuffer = new String[10];
+    private int iterator = 0;
 
 //    private int count = 1;
 
-    public VoiceController(Context context, Activity activity, StateController stateController)
+    public VoiceController(Context context, Activity activity, StateController stateController, String[] commandList)
 
     {
 //        returnedText = (TextView) findViewById(R.id.textView1);
         this.context = context;
         this.activity = activity;
         this.stateController = stateController;
+        this.commandList = commandList;
+
         speech = SpeechRecognizer.createSpeechRecognizer(context);
         Log.i(LOG_TAG, "isRecognitionAvailable: " + SpeechRecognizer.isRecognitionAvailable(context));
         speech.setRecognitionListener(this);
@@ -119,6 +124,7 @@ public class VoiceController implements
 
     public void startListening(){
         speech.startListening(recognizerIntent);
+
     }
     public void stopListening(){
         speech.stopListening();
@@ -160,14 +166,29 @@ public class VoiceController implements
             text += result + "\n";
             singlePartialResult = result;
             //TODO logic for read and commands
-            if(singlePartialResult.contains("read")){
-                stateController.onCommandRead();
+//            if(singlePartialResult.toLowerCase().contains("read")){
+//                stopListening();
+//                stateController.onCommandRead();
+//            }
+//            if(singlePartialResult.toLowerCase().contains("skip")){
+//                stopListening();
+//                stateController.onCommandSkip();
+//            }
+            for(int i = 0; i < commandList.length; i++) {
+                if (singlePartialResult.toUpperCase().contains(commandList[i])){
+                    commandBuffer[iterator] = commandList[i].toUpperCase();
+                    iterator++;
+                    singlePartialResult = "";
+                    if(iterator == 10){
+                        iterator = 0;
+                    }
+                }
             }
         }
 
         partialResult = text;
 
-        //MainActivity.returnedText.setText(singlePartialResult + "," + text);
+        MainActivity.returnedText.setText(singlePartialResult);
 
 //        count++;
     }
@@ -233,5 +254,25 @@ public class VoiceController implements
                 break;
         }
         return message;
+    }
+
+    /**
+     * Ask the user a question with text to speech and wait until a speech to text response
+     * @param question The question to ask
+     * @return The user's answer (please switch to uppercase for consistency)
+     */
+    public String question(String question)
+    {
+        //TODO Implement this
+        return null;
+    }
+
+    /**
+     * Get all the commands the user has sent and clear the list
+     * @return List of uppercase string commands
+     */
+    public String[] getCommandBuffer()
+    {
+        return commandBuffer;
     }
 }

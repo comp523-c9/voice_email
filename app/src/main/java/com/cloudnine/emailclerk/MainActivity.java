@@ -52,11 +52,13 @@ public class MainActivity extends AppCompatActivity {
 
     static final int PASS_GMAIL_OBJECT = 1;
     static final int RESULT_OKAY = 2;
+    public static TextView returnedText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        returnedText = (TextView) findViewById(R.id.text);
 
         // Start Gmail Authentication Activity
         Intent i= new Intent(MainActivity.this, GmailAuth.class);
