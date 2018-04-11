@@ -11,7 +11,7 @@ public class StateController {
     //private SettingsController settings;
     private VoiceController voiceController;
     private EmailController emailController;
-    private String[] dummyStringList;
+    private String[] dummyStringList = {"READ","SKIP"};
 
     public enum MainState { OPENED, LISTING, READING, COMPOSING }
     public MainState state;
