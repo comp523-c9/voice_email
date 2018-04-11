@@ -22,6 +22,7 @@ public class StateController
     private VoiceController voiceController;
     private EmailController emailController;
     private String userEmail;
+    private String userName;
 
     /**
      * A simple enumeration to hold the current activity of the app
@@ -94,6 +95,7 @@ public class StateController
         //voiceController.textToSpeech(output);
         //voiceController.startListening();
         this.userEmail = emails.get(0).getReceiverAddress();
+        this.userName = emails.get(0).getSenderName();
         emailController.deleteEmail(curEmail.getThreadId());
     }
 
@@ -150,9 +152,15 @@ public class StateController
         }
     }
 
-    public void draftEmail(String recipients)
+    public void draftEmail(String recipient, String subject, Email email)
     {
-
+        String body = "";
+        while(!body.contains("FINISH"))
+        {
+            body += voiceController.question("");
+        }
+        if(!subject.contains("Re: ")) { subject = "Re: " + subject; }
+        emailController.sendEmail(recipient, userEmail, subject, body, email);
     }
 
     /**
@@ -222,14 +230,14 @@ public class StateController
                 if(voiceController.question("Are you sure you want to reply all?") == "YES")
                 {
                     state = MainState.COMPOSING;
-                    draftEmail(current.getSenderEmail()); //TODO We need a way to get multiple senders
+                    //draftEmail(current.getSenderAddress(), current); //TODO We need a way to get multiple senders
                 }
                 else { state = MainState.READING; }
                 break;
             case "REPLY":
                 state = MainState.COMPOSING;
                 state = MainState.COMPOSING;
-                draftEmail(current.getSenderEmail()); //TODO We need a way to get multiple senders
+                draftEmail(current.getSenderAddress(), current); //TODO We need a way to get multiple senders
                 break;
             case "FORWARD":
                 String recipient = voiceController.question("To whom would you like to forward this email?");
