@@ -21,7 +21,11 @@
       <activity android:name=".GmailAuth"
           android:theme="@style/Theme.Transparent">
       </activity>
-
+      <activity
+          android:name=".SettingsController"
+          android:label="Settings"
+          android:parentActivityName=".MainActivity"
+          ></activity>
 
 
   </application>
