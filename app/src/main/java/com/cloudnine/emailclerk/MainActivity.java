@@ -28,6 +28,10 @@ import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.widget.LinearLayout;
 import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
@@ -58,10 +62,34 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        Toolbar toolbar = (Toolbar) findViewById(R.id.mCustomToolbar);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setTitle("Email Clerk");
+
         // Start Gmail Authentication Activity
         Intent i= new Intent(MainActivity.this, GmailAuth.class);
         this.startActivityForResult(i, PASS_GMAIL_OBJECT);
 
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu (Menu menu)  {
+        MenuInflater menuInflater = getMenuInflater();
+        menuInflater.inflate(R.menu.menu_main,menu);
+
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int res_id = item.getItemId();
+        if(res_id==R.id.settings)
+        {
+            // Toast.makeText(getApplicationContext(),"selected",Toast.LENGTH_LONG).show();
+            Intent settingIntent = new Intent(getApplicationContext(),SettingsController.class);
+            startActivity(settingIntent);
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     // Get mService Gmail object from Gmail Authentication Activity end
