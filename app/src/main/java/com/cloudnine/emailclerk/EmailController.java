@@ -218,10 +218,18 @@ public class EmailController {
                     senderName = "";
                 }
 
-                String messageBody = curMessage.getSnippet();
-                //String messageBody = StringUtils.newStringUtf8(Base64.decodeBase64(curMessage.getPayload().getParts().get(0).getBody().getData().trim().toString())); //TODO
-                //messageBody = messageBody.replaceAll("(\r\n|\n\r|\n|\r)", "");
+                //String messageBody = curMessage.getSnippet();
+//                String messageBody = StringUtils.newStringUtf8(Base64.decodeBase64(curMessage.getPayload().getParts().get(0).getBody().getData().trim().toString())); //TODO
+//                messageBody = messageBody.replaceAll("(\r\n|\n\r|\n|\r)", "");
+                String messageBody = "There is no message body";
+                if (!curMessage.getPayload().getMimeType().equals("text/html")) {
+                    try {
+                        messageBody = StringUtils.newStringUtf8(Base64.decodeBase64(curMessage.getPayload().getParts().get(0).getBody().getData().trim().toString())); //TODO
+                        messageBody = messageBody.replaceAll("(\r\n|\n\r|\n|\r)", "");
+                    } catch(Exception e) {
 
+                    }
+                }
                 emailList.add(new Email(id, threadId, receiverAddress, receiverName, senderAddress, senderName, subject, messageBody));
             }
             return emailList;

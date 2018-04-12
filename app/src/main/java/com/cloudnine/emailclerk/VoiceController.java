@@ -192,14 +192,17 @@ public class VoiceController implements
 //                singlePartialResult = "";
 //                stateController.onCommandSkip();
 //            }
+            MainActivity.returnedText.setText(singlePartialResult);
+
             for(int i = 0; i < validCommands.length; i++)
                 if(singlePartialResult.toUpperCase().contains(validCommands[i])){
                     MainActivity.returnedText.setText(singlePartialResult);
                     singlePartialResult = "";
                     //TODO call some method from state controller
-//                    if(validCommands[i].contains("READ")){
-//                        stateController.onCommandRead();
-//                    }
+                    if(validCommands[i].toUpperCase().contains("READ")){
+                        stateController.onCommandRead();
+                        break;
+                    }
                     if(validCommands[i].toUpperCase().contains("SKIP")){
                         stateController.onCommandSkip();
                         break;
@@ -208,19 +211,19 @@ public class VoiceController implements
                         stateController.onCommandDelete();
                         break;
                     }
-//                    if(validCommands[i].contains("REPLY")){
-//
-//                    }
-//                    if(validCommands[i].contains("REDO")){
-//
-//                    }
-//                    if(validCommands[i].contains("SEND")){
-//
-//                    }
+                    else if(validCommands[i].toUpperCase().contains("REPLY")){
+                        stateController.onCommandReply();
+                        break;
+                    }
+                    else if(validCommands[i].toUpperCase().contains("CHANGE")){
+                        stateController.onCommandChange();
+                        break;
+                    }
+                    else if(validCommands[i].toUpperCase().contains("SEND")){
+                        stateController.onCommandSend();
+                        break;
+                    }
                 }
-            MainActivity.returnedText.setText(singlePartialResult);
-
-
         }
 
         partialResult = text;
@@ -248,10 +251,15 @@ public class VoiceController implements
         if(validCommands.length!=0){
             startListening(validCommands);
         }
+        else{
+            partialResult = text;
+            MainActivity.returnedText.setText(text);
+            partialResult = "";
+            stateController.onReplyAnswered(text);
+        }
         //returnedText.setText(text);
-        partialResult = text;
         //MainActivity.returnedText.setText(text);
-        partialResult = "";
+
     }
     @Override
     public void onRmsChanged(float rmsdB)
