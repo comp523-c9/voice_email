@@ -47,16 +47,22 @@ public class VoiceController implements
     public String singlePartialResult = "";
     private static TextToSpeech tts;
     private StateController stateController;
+    private String[] commandList;
+    private String[] validCommands;
+    private int iterator = 0;
+    public boolean go;
 
 //    private int count = 1;
 
-    public VoiceController(Context context, Activity activity, StateController stateController)
+    public VoiceController(Context context, Activity activity, StateController stateController, String[] commandList)
 
     {
 //        returnedText = (TextView) findViewById(R.id.textView1);
         this.context = context;
         this.activity = activity;
         this.stateController = stateController;
+        this.commandList = commandList;
+
         speech = SpeechRecognizer.createSpeechRecognizer(context);
         Log.i(LOG_TAG, "isRecognitionAvailable: " + SpeechRecognizer.isRecognitionAvailable(context));
         speech.setRecognitionListener(this);
@@ -117,10 +123,25 @@ public class VoiceController implements
         return partialResult;
     }
 
-    public void startListening(){
+    public void startListening(String[] validCommands){
+        this.validCommands = validCommands;
+        speech.stopListening();
+        speech.cancel();
+        speech.destroy();
+        speech = SpeechRecognizer.createSpeechRecognizer(context);
+        speech.setRecognitionListener(this);
+//        AudioManager amanager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+//        amanager.setStreamVolume(AudioManager.STREAM_NOTIFICATION, AudioManager.ADJUST_MUTE, 0);
+        recognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE,
+                "en");
+        recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        recognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
         speech.startListening(recognizerIntent);
+
     }
-    public void stopListening(){
+    private void stopListening(){
         speech.stopListening();
     }
     @Override
@@ -142,6 +163,7 @@ public class VoiceController implements
     public void onError(int errorCode) {
         String errorMessage = getErrorText(errorCode);
         Log.d(LOG_TAG, "FAILED " + errorMessage);
+        startListening(validCommands);
         //MainActivity.returnedText.setText(errorMessage);
     }
 
@@ -160,14 +182,45 @@ public class VoiceController implements
             text += result + "\n";
             singlePartialResult = result;
             //TODO logic for read and commands
-            if(singlePartialResult.contains("read")){
-                stateController.onCommandRead();
-            }
+//            if(singlePartialResult.toLowerCase().contains("read")){
+//                stopListening();
+//                stateController.onCommandRead();
+//                singlePartialResult = "";
+//            }
+//            if(singlePartialResult.toLowerCase().contains("skip")){
+//                speech.cancel();
+//                singlePartialResult = "";
+//                stateController.onCommandSkip();
+//            }
+            for(int i = 0; i < validCommands.length; i++)
+                if(singlePartialResult.toUpperCase().contains(validCommands[i])){
+                    MainActivity.returnedText.setText(singlePartialResult);
+                    singlePartialResult = "";
+                    //TODO call some method from state controller
+                    if(validCommands[i].contains("READ")){
+                        stateController.onCommandRead();
+                    }
+                    if(validCommands[i].contains("SKIP")){
+                        stateController.onCommandSkip();
+                    }
+                    if(validCommands[i].contains("DELETE")){
+
+                    }
+                    if(validCommands[i].contains("REPLY")){
+
+                    }
+                    if(validCommands[i].contains("REDO")){
+
+                    }
+                    if(validCommands[i].contains("SEND")){
+
+                    }
+                }
+
         }
 
         partialResult = text;
 
-        //MainActivity.returnedText.setText(singlePartialResult + "," + text);
 
 //        count++;
     }
@@ -175,6 +228,7 @@ public class VoiceController implements
     @Override
     public void onReadyForSpeech(Bundle arg0) {
         Log.i(LOG_TAG, "onReadyForSpeech");
+        go = true;
     }
 
     @Override
@@ -194,8 +248,9 @@ public class VoiceController implements
         partialResult = "";
     }
     @Override
-    public void onRmsChanged(float rmsdB) {
-        Log.i(LOG_TAG, "onRmsChanged: " + rmsdB);
+    public void onRmsChanged(float rmsdB)
+    {
+        //Log.i(LOG_TAG, "onRmsChanged: " + rmsdB);
     }
 
     public static String getErrorText(int errorCode) {
@@ -234,4 +289,24 @@ public class VoiceController implements
         }
         return message;
     }
+//
+//    /**
+//     * Ask the user a question with text to speech and wait until a speech to text response
+//     * @param question The question to ask
+//     * @return The user's answer (please switch to uppercase for consistency)
+//     */
+//    public String question(String question)
+//    {
+//        //TODO Implement this
+//        return null;
+//    }
+
+//    /**
+//     * Get all the commands the user has sent and clear the list
+//     * @return List of uppercase string commands
+//     */
+//    public String[] getCommandBuffer()
+//    {
+//        return commandBuffer;
+//    }
 }
