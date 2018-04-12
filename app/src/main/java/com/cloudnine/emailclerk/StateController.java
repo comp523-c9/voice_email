@@ -77,7 +77,7 @@ public class StateController
         this.state = MainState.OPENED;
 
         emailController = new EmailController(this, mService);
-        voiceController = new VoiceController(master.getApplicationContext(), master);
+        voiceController = new VoiceController(master.getApplicationContext(), master, this);
         //settings = new SettingsController();
 
         /* THIS IS A TEST TO FETCH EMAILS WITH THE EMAIL CONTROLLER */
@@ -109,19 +109,15 @@ public class StateController
         while(state == MainState.LISTING)
         {
             Email current = emails.get(pointer);
-            try
-            {
-
-                VoiceController.textToSpeech(current.getSubject());
-                VoiceController.textToSpeech("From " + current.getSenderName());
-                voiceController.textToSpeech("On " + current.getFormattedDateTime());
-            }
-            catch(Exception e) { } //"Skip Exception" maybe?
+            VoiceController.textToSpeech(current.getSubject());
+            VoiceController.textToSpeech("From " + current.getSenderName());
             pointer++;
-            String[] cmdBuffer = voiceController.getCommandBuffer();
-            if(cmdBuffer.length > 0)
+
+            String command = VoiceController.question("What would you like to do?");
+
+            if(command != null)
             {
-                sendCommand(cmdBuffer[0], current);
+                sendCommand(command, current);
             }
         }
     }
@@ -144,10 +140,12 @@ public class StateController
             {
                 state = MainState.LISTING;
             }
-            String[] cmdBuffer = voiceController.getCommandBuffer();
-            if(cmdBuffer.length > 0)
+
+            String command = VoiceController.question("What would you like to do?");
+
+            if(command != null)
             {
-                sendCommand(cmdBuffer[0], current);
+                sendCommand(command, current);
             }
         }
     }
@@ -237,13 +235,13 @@ public class StateController
             case "REPLY":
                 state = MainState.COMPOSING;
                 state = MainState.COMPOSING;
-                draftEmail(current.getSenderAddress(), current); //TODO We need a way to get multiple senders
+                draftEmail(current.getSenderAddress(), current.getSubject(), current); //TODO We need a way to get multiple senders
                 break;
             case "FORWARD":
                 String recipient = voiceController.question("To whom would you like to forward this email?");
                 while(voiceController.question("Do you want to forward this email to " + recipient + "?") != "YES")
                     recipient = voiceController.question("To whom would you like to forward this email?");
-                emailController.sendEmail(recipient, emailController.ME, "Fwd: " + current.getSubject(), current.getSenderEmail());
+                emailController.sendEmail(recipient, userEmail, "Fwd: " + current.getSubject(), current.getSenderEmail());
                 break;
             case "DELETE":
                 if(voiceController.question("Are you sure you want to delete?") == "YES")
