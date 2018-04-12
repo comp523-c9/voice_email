@@ -12,6 +12,8 @@ public class StateController {
     private VoiceController voiceController;
     private EmailController emailController;
     private String[] dummyStringList = {"READ","SKIP"};
+    private String[] listenState = {"READ", "SKIP", "DELETE"};
+
 
     public enum MainState { OPENED, LISTING, READING, COMPOSING }
     public MainState state;
@@ -31,24 +33,29 @@ public class StateController {
 
         /** THIS IS A TEST TO FETCH EMAILS WITH THE EMAIL CONTROLLER **/
         //emailControler.getNewEmails();
-        emailController.getNewEmails(1);
+        emailController.getNewEmails(2);
     }
 
     public void onEmailsRetrieved() {
         Email curEmail = emails.get(0);
         voiceController.textToSpeech(curEmail.getSenderName() + curEmail.getSubject());
-        voiceController.startListening();
+        voiceController.startListening(listenState);
        // emailController.sendEmail(curEmail, "this is the message body of a reply");
     }
     public void onCommandRead(){
         voiceController.textToSpeech(emails.get(0).getMessage());
+        //raise read flag
+
     }
     public void onCommandSkip(){
         iterator++;
-//        Email curEmail = emails.get(iterator);
+        Email curEmail = emails.get(iterator);
         voiceController.textToSpeech("skipped email");
-//        voiceController.textToSpeech(curEmail.getSenderName() + curEmail.getSubject());
-        voiceController.startListening();
+        voiceController.textToSpeech(curEmail.getSenderName() + curEmail.getSubject());
+        voiceController.startListening(listenState);
+
+    }
+    public void onCommandDelete(){
 
     }
 
