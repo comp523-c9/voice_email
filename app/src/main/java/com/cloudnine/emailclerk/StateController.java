@@ -1,5 +1,7 @@
 package com.cloudnine.emailclerk;
 
+import android.app.Activity;
+import android.content.Context;
 import android.speech.tts.Voice;
 
 import java.util.*;
@@ -26,20 +28,21 @@ public class StateController
     private com.google.api.services.gmail.Gmail mService;
     public List<Email> emails;
     private int counter;
+    private String[] listingState = {"READ","SKIP", "DELETE"};
 
-    StateController(MainActivity mainActivity, com.google.api.services.gmail.Gmail mService)
+    StateController(MainActivity mainActivity, Context context, Activity activity, com.google.api.services.gmail.Gmail mService)
     {
         this.master = mainActivity;
         this.mService = mService;
         this.counter = 0;
 
         emailController = new EmailController(this, mService);
-        voiceController = new VoiceController(master.getApplicationContext(), master, this);
+        voiceController = new VoiceController(context, activity, this, listingState);
         //settings = new SettingsController();
 
         /* THIS IS A TEST TO FETCH EMAILS WITH THE EMAIL CONTROLLER */
         //emailControler.getNewEmails();
-        emailController.getNewEmails(1);
+        emailController.getNewEmails(5);
     }
 
     /**
@@ -49,8 +52,8 @@ public class StateController
     {
         Email curEmail = emails.get(0);
         String output = "New email from " + curEmail.getSenderName() + " with the subject " + curEmail.getSubject() + ". Would you like to read, skip or delete?";
-        //voiceController.textToSpeech(output);
-        //voiceController.startListening();
+        voiceController.textToSpeech(output);
+        voiceController.startListening(listingState);
         this.userEmail = emails.get(0).getReceiverAddress();
         this.userName = emails.get(0).getSenderName();
     }
@@ -62,11 +65,12 @@ public class StateController
         String[] possibleInputs = new String[2];
         possibleInputs[0] = "SKIP";
         possibleInputs[1] = "DELETE";
+        voiceController.textToSpeech(output);
         voiceController.startListening(possibleInputs);
     }
 
     public void onCommandDelete() {
-        emailController.deleteEmail(emails.get(counter).getThreadId());
+        emailController.deleteEmail(emails.get(counter).getID());
         readNextEmail();
     }
 

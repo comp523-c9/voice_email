@@ -197,25 +197,29 @@ public class VoiceController implements
                     MainActivity.returnedText.setText(singlePartialResult);
                     singlePartialResult = "";
                     //TODO call some method from state controller
-                    if(validCommands[i].contains("READ")){
-                        stateController.onCommandRead();
-                    }
-                    if(validCommands[i].contains("SKIP")){
+//                    if(validCommands[i].contains("READ")){
+//                        stateController.onCommandRead();
+//                    }
+                    if(validCommands[i].toUpperCase().contains("SKIP")){
                         stateController.onCommandSkip();
+                        break;
                     }
-                    if(validCommands[i].contains("DELETE")){
-
+                    else if(validCommands[i].toUpperCase().contains("DELETE")){
+                        stateController.onCommandDelete();
+                        break;
                     }
-                    if(validCommands[i].contains("REPLY")){
-
-                    }
-                    if(validCommands[i].contains("REDO")){
-
-                    }
-                    if(validCommands[i].contains("SEND")){
-
-                    }
+//                    if(validCommands[i].contains("REPLY")){
+//
+//                    }
+//                    if(validCommands[i].contains("REDO")){
+//
+//                    }
+//                    if(validCommands[i].contains("SEND")){
+//
+//                    }
                 }
+            MainActivity.returnedText.setText(singlePartialResult);
+
 
         }
 
@@ -241,7 +245,9 @@ public class VoiceController implements
             text += result + "\n";
             break;
         }
-
+        if(validCommands.length!=0){
+            startListening(validCommands);
+        }
         //returnedText.setText(text);
         partialResult = text;
         //MainActivity.returnedText.setText(text);

@@ -147,8 +147,10 @@ public class EmailController {
             // Initialize batch object
             BatchRequest batch = mService.batch();
 
-            ListMessagesResponse listResponse = mService.users().messages().list("me").setMaxResults(new Long(num)).execute();
-
+ //           ListMessagesResponse listResponse = mService.users().messages().list("me").setMaxResults(new Long(num)).execute();
+            List<String> labels = new ArrayList<String>();
+            labels.add("INBOX");
+            ListMessagesResponse listResponse = mService.users().messages().list("me").setLabelIds(labels).setMaxResults(new Long(num)).execute();
             final List<com.google.api.services.gmail.model.Message> messages = new ArrayList<com.google.api.services.gmail.model.Message>();
             JsonBatchCallback<com.google.api.services.gmail.model.Message> callback = new JsonBatchCallback<com.google.api.services.gmail.model.Message>() {
                 public void onSuccess(com.google.api.services.gmail.model.Message message, HttpHeaders responseHeaders) {
@@ -196,10 +198,25 @@ public class EmailController {
                     }
                 }
 
-                String receiverAddress = receiver.substring((receiver.indexOf("<")+1), receiver.indexOf(">"));
-                String receiverName = receiver.substring(0, receiver.indexOf("<")-1);
-                String senderAddress = sender.substring((sender.indexOf("<")+1), sender.indexOf(">"));
-                String senderName = sender.substring(0, sender.indexOf("<")-1);
+                String receiverAddress;
+                String receiverName;
+                String senderAddress;
+                String senderName;
+
+                if (receiver.indexOf("<") > 0) {
+                    receiverAddress = receiver.substring((receiver.indexOf("<")+1), receiver.indexOf(">"));
+                    receiverName = receiver.substring(0, receiver.indexOf("<")-1);
+                } else {
+                    receiverAddress = receiver;
+                    receiverName = "";
+                }
+                if (sender.indexOf("<") > 0) {
+                    senderAddress = sender.substring((sender.indexOf("<")+1), sender.indexOf(">"));
+                    senderName = sender.substring(0, sender.indexOf("<")-1);
+                } else {
+                    senderAddress = sender;
+                    senderName = "";
+                }
 
                 String messageBody = curMessage.getSnippet();
                 //String messageBody = StringUtils.newStringUtf8(Base64.decodeBase64(curMessage.getPayload().getParts().get(0).getBody().getData().trim().toString())); //TODO
