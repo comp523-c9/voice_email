@@ -30,6 +30,7 @@ public class StateController
     private int counter;
     private String[] listingState = {"READ","SKIP", "DELETE"};
     private String messageBody;
+    private int fetchNumber; //The number of times new emails are fetched (50 at a time)
 
     StateController(MainActivity mainActivity, Context context, Activity activity, com.google.api.services.gmail.Gmail mService)
     {
@@ -37,6 +38,8 @@ public class StateController
         this.mService = mService;
         this.counter = 0;
         messageBody = "";
+        fetchNumber = 0;
+        emails = new ArrayList<Email>();
 
         emailController = new EmailController(this, mService);
         voiceController = new VoiceController(context, activity, this, listingState);
@@ -44,7 +47,7 @@ public class StateController
 
         /* THIS IS A TEST TO FETCH EMAILS WITH THE EMAIL CONTROLLER */
         //emailControler.getNewEmails();
-        emailController.getNewEmails(400);
+        emailController.getNewEmails(7);
     }
 
     /**
@@ -65,6 +68,8 @@ public class StateController
         if (counter == emails.size()) {
             voiceController.textToSpeech("You are out of emails. Please restart the app");
             return;
+        } else if (counter == emails.size() - 5) {
+            emailController.fetchNewEmails(emails.get(fetchNumber * 10), emails.get(emails.size() - 1));
         } else {
             Email curEmail = emails.get(counter);
             String output = "New email from " + curEmail.getSenderName() + " with the subject " + curEmail.getSubject() + ". Would you like to read, skip or delete?";
