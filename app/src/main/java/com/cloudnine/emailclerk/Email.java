@@ -10,16 +10,10 @@ public class Email {
     private String senderName;
     private String subject;
     private String message;
+    private String date;
 
     // Constructor
-    Email(String id,
-          String threadId,
-          String receiverAddress,
-          String receiverName,
-          String senderAddress,
-          String senderName,
-          String subject,
-          String message)
+    Email(String id, String threadId, String receiverAddress, String receiverName, String senderAddress, String senderName, String subject, String message, String date)
     {
         this.id = id;
         this.threadId = threadId;
@@ -29,6 +23,7 @@ public class Email {
         this.senderName = senderName;
         this.subject = subject;
         this.message = message;
+        this.date = date;
     }
 
     // Getters
@@ -40,9 +35,7 @@ public class Email {
 
     public String getReceiverName() { return receiverName; }
 
-    public String getSenderAddress() {
-        return senderAddress;
-    }
+    public String getSenderAddress() { return senderAddress; }
 
     public String getSenderName() {
         return senderName;
@@ -55,4 +48,6 @@ public class Email {
     public String getMessage() {
         return message;
     }
+
+    public String getDate() { return date; }
 }

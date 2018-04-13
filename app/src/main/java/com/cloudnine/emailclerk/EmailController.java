@@ -22,6 +22,7 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.io.*;
 
@@ -33,12 +34,9 @@ import com.google.api.client.repackaged.org.apache.commons.codec.binary.StringUt
 
 import com.google.api.client.googleapis.json.GoogleJsonError;
 import com.google.api.client.http.HttpHeaders;
-import com.google.api.services.gmail.*;
 import com.google.api.services.gmail.model.*;
 
 import java.io.ByteArrayOutputStream;
-
-import org.json.JSONObject;
 
 /**
  * Created by alecs on 4/4/2018.
@@ -51,18 +49,15 @@ public class EmailController {
     volatile boolean finished = false;
     StateController stateController; // Reference to StateController
 
-    protected final int GET_NEW_EMAILS = 1;
-    private final int SEND_EMAIL     = 2;
-    private final int DELETE_EMAIL   = 3;
-
     EmailController(StateController stateController, com.google.api.services.gmail.Gmail mService) {
         this.stateController = stateController;
         this.mService = mService;
     }
 
     public void getNewEmails(int num) {
-        String[] params = new String[1];
+        String[] params = new String[2];
         params[0] = Integer.toString(num);
+        params[1] = "false";
         new AsyncGetEmails().execute(params);
     }
 
@@ -70,22 +65,6 @@ public class EmailController {
         String[] params = new String[1];
         params[0] = threadId;
         new AsyncDeleteEmail().execute(params);
-    }
-
-    public void sendEmail(Email email, String bodyText) {
-        List<String> paramsList = new ArrayList<String>();
-        paramsList.add(email.getID());
-        paramsList.add(email.getReceiverAddress());
-        paramsList.add(email.getReceiverName());
-        paramsList.add(email.getSenderAddress());
-        paramsList.add(email.getSenderName());
-        paramsList.add(email.getSubject());
-        paramsList.add(bodyText);
-
-        String[] params = new String[paramsList.size()];
-        params = paramsList.toArray(params);
-
-        new AsyncReplyToEmail().execute(params);
     }
 
     /** sendEmail() is overloaded. This is the 'compose' one **/
@@ -119,19 +98,49 @@ public class EmailController {
         new AsyncReplyToEmail().execute(params);
     }
 
+    public void fetchNewEmails(Email startEmail, Email endEmail) {
+        String startDate = convertDate(startEmail.getDate());
+        String endDate = convertDate(endEmail.getDate());
+        new AsyncGetEmails(startDate, endDate).execute("50", "true");
+    }
+
+    /**
+     * @param inputDate
+     * @return convertDate in Epoch time for use in fetchNewEmails()
+     **/
+    private String convertDate(String inputDate) {
+        String convertedDate = "";
+        SimpleDateFormat df = new SimpleDateFormat("dd MMM yyyy HH:mm:ss");
+
+        try {
+            Date date = df.parse(inputDate.substring(5, 26));
+            convertedDate = Long.toString(date.getTime());
+        } catch(Exception e) {
+            Exception b = e;
+        }
+        return convertedDate.substring(0, convertedDate.length() - 3); // Chop off the last 3 digits to convert to seconds
+    }
+
     private class AsyncGetEmails extends AsyncTask<String, Void, List<Email>> {
 
         Exception mLastError;
+        String startDate;
+        String endDate;
 
         AsyncGetEmails() {
             mLastError = null;
+        }
+        AsyncGetEmails(String startDate, String endDate) {
+            mLastError = null;
+            this.startDate = startDate;
+            this.endDate = endDate;
         }
 
         @Override
         protected List<Email> doInBackground(String... params) {
 
             try {
-                return asyncGetEmails(Integer.parseInt(params[0]));
+                return asyncGetEmails(Integer.parseInt(params[0]), params[1]);
             } catch (Exception e) {
                 mLastError = e;
                 cancel(true);
@@ -139,7 +148,7 @@ public class EmailController {
             }
         }
 
-        private List<Email> asyncGetEmails(int num) throws IOException {
+        private List<Email> asyncGetEmails(int num, String getNewBatch) throws IOException {
 
             // Create list to store email objects...
             List<Email> emailList = new ArrayList<Email>();
@@ -147,11 +156,21 @@ public class EmailController {
             // Initialize batch object
             BatchRequest batch = mService.batch();
 
- //           ListMessagesResponse listResponse = mService.users().messages().list("me").setMaxResults(new Long(num)).execute();
             List<String> labels = new ArrayList<String>();
             labels.add("INBOX");
-            ListMessagesResponse listResponse = mService.users().messages().list("me").setLabelIds(labels).setMaxResults(new Long(num)).execute();
+            ListMessagesResponse listResponse;
+
+            if (getNewBatch.equals("false")) {
+                listResponse = mService.users().messages().list("me").setLabelIds(labels).setMaxResults(new Long(num)).execute();
+            } else {
+                startDate = Integer.toString(Integer.parseInt(startDate) + 1); // Add 1 second because 'after:' is inclusive
+                String query = "before:" + endDate + " || after:" + startDate;
+                listResponse = mService.users().messages().list("me").setLabelIds(labels).setMaxResults(new Long(num))
+                        .setQ(query).execute();
+            }
+
             final List<com.google.api.services.gmail.model.Message> messages = new ArrayList<com.google.api.services.gmail.model.Message>();
+
             JsonBatchCallback<com.google.api.services.gmail.model.Message> callback = new JsonBatchCallback<com.google.api.services.gmail.model.Message>() {
                 public void onSuccess(com.google.api.services.gmail.model.Message message, HttpHeaders responseHeaders) {
                     System.out.println("MessageThreadID:" + message.getThreadId());
@@ -162,8 +181,7 @@ public class EmailController {
                 }
 
                 @Override
-                public void onFailure(GoogleJsonError e, HttpHeaders responseHeaders)
-                        throws IOException {
+                public void onFailure(GoogleJsonError e, HttpHeaders responseHeaders) throws IOException {
                 }
             };
 
@@ -182,11 +200,12 @@ public class EmailController {
                 String receiver = "";
                 String sender = "";
                 String subject = "";
+                String date = "";
 
 
                 List<MessagePartHeader> headers = curMessage.getPayload().getHeaders();
                 for(MessagePartHeader header:headers){
-                    if (subject == "" || sender == "" || receiver == "") {
+                    if (subject == "" || sender == "" || receiver == "" || date == "") {
                         String name = header.getName();
                         if(name.equals("Subject")) {
                             subject = header.getValue();
@@ -194,6 +213,8 @@ public class EmailController {
                             sender = header.getValue();
                         } else if (name.equals("To")) {
                             receiver = header.getValue();
+                        } else if (name.equals("Date")) {
+                            date = header.getValue();
                         }
                     }
                 }
@@ -230,7 +251,10 @@ public class EmailController {
 
                     }
                 }
-                emailList.add(new Email(id, threadId, receiverAddress, receiverName, senderAddress, senderName, subject, messageBody));
+
+
+
+                emailList.add(new Email(id, threadId, receiverAddress, receiverName, senderAddress, senderName, subject, messageBody, date));
             }
             return emailList;
         }
@@ -238,7 +262,7 @@ public class EmailController {
         @Override
         protected void onPostExecute(List<Email> output) {
             if (output != null && output.size() != 0) {
-                stateController.emails = output;
+                stateController.emails.addAll(output);
                 stateController.onEmailsRetrieved();
             }
         }
@@ -291,9 +315,10 @@ public class EmailController {
                 byte[] bytes = buffer.toByteArray();
                 String encodedEmail = Base64.encodeBase64URLSafeString(bytes);
                 com.google.api.services.gmail.model.Message message = new com.google.api.services.gmail.model.Message();
-                com.google.api.services.gmail.model.Draft draft = new com.google.api.services.gmail.model.Draft();
                 message.setRaw(encodedEmail);
-                mService.users().drafts().send("me", draft).execute();
+                Draft draft = new Draft();
+                draft.setMessage(message);
+                mService.users().drafts().create("me", draft).execute();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -345,7 +370,9 @@ public class EmailController {
                 String encodedEmail = Base64.encodeBase64URLSafeString(bytes);
                 com.google.api.services.gmail.model.Message message = new com.google.api.services.gmail.model.Message();
                 message.setRaw(encodedEmail);
-                mService.users().messages().send("me", message).execute();
+                Draft draft = new Draft();
+                draft.setMessage(message);
+                mService.users().drafts().create("me", draft).execute();
             } catch (Exception e) {
                 e.printStackTrace();
             }
