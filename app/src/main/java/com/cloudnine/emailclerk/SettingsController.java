@@ -19,7 +19,7 @@ public class SettingsController extends AppCompatActivity {
     private static SeekBar tts_seekbar;
     private static TextView tts_speedtext;
     private static Switch readSwitch;
-    private static int tts_progress_value;
+    private static int tts_progress_value = 10;
     private static boolean skip_read;
 
     public static int getTTSSpeed (){
@@ -46,7 +46,7 @@ public class SettingsController extends AppCompatActivity {
         tts_speedtext = (TextView) findViewById(R.id.tts_speedbartext);
         tts_seekbar.setProgress(tts_progress_value);
         tts_speedtext.setText(String.valueOf(tts_seekbar.getProgress() * 10) + "%");
-        tts_seekbar.setMax(10);
+        tts_seekbar.setMax(20);
 
 
         tts_seekbar.setOnSeekBarChangeListener(
