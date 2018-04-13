@@ -6,16 +6,16 @@
 
     <include layout="@layout/toolbar"
         android:id="@+id/mCustomToolbar"/>
-    <TextView android:id="@+id/text"
+    <TextView android:id="@+id/texttest"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Hello, I am a TextView"
         android:layout_below="@id/mCustomToolbar"/>
 
     <Button
-        android:id="@+id/button"
+        android:id="@+id/buttontest"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="MainActivity"
-        android:layout_below="@id/text"/>
+        android:layout_below="@id/texttest"
+        android:text="MainActivity" />
 </RelativeLayout>
