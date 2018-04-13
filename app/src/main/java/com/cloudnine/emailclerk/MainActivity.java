@@ -44,11 +44,14 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import org.w3c.dom.Text;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
@@ -82,12 +85,17 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.mCustomToolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setTitle("Email Clerk");
+        final TextView text1 = (TextView) findViewById(R.id.texttest);
+        Button btn1 = (Button) findViewById(R.id.buttontest);
+
 
         // Start Gmail Authentication Activity
         Intent i= new Intent(MainActivity.this, GmailAuth.class);
         this.startActivityForResult(i, PASS_GMAIL_OBJECT);
 
     }
+
+
 
     @Override
     public boolean onCreateOptionsMenu (Menu menu)  {
