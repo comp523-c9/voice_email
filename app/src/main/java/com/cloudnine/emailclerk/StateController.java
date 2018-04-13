@@ -30,6 +30,8 @@ public class StateController
     private int counter;
     private String[] listingState = {"READ","SKIP", "DELETE"};
     private String messageBody;
+    private boolean sent;
+    private boolean add;
 
     StateController(MainActivity mainActivity, Context context, Activity activity, com.google.api.services.gmail.Gmail mService)
     {
@@ -72,7 +74,13 @@ public class StateController
             possibleInputs[0] = "SKIP";
             possibleInputs[1] = "DELETE";
             possibleInputs[2] = "READ";
-            voiceController.textToSpeech(output);
+            if(sent){
+                voiceController.textToSpeech(output, true);
+                sent = false;
+            }
+            else {
+                voiceController.textToSpeech(output);
+            }
             voiceController.startListening(possibleInputs);
         }
     }
@@ -99,23 +107,38 @@ public class StateController
     }
 
     public void onReplyAnswered(String message) {
-        voiceController.textToSpeech("Your message was recorded as: " + message + " Would you like to send, change, or skip?");
-        this.messageBody = message;
-        String[] possibleInputs = new String[3];
+        if(add){
+            this.messageBody = messageBody + " " + message;
+            add = false;
+        }
+        else {
+            this.messageBody = message;
+        }
+        voiceController.textToSpeech("Your message was recorded as: " + messageBody + " Would you like to skip, change, continue, or send?");
+        String[] possibleInputs = new String[4];
         possibleInputs[0] = "SEND";
         possibleInputs[1] = "CHANGE";
         possibleInputs[2] = "SKIP";
+        possibleInputs[3] = "CONTINUE";
         voiceController.startListening(possibleInputs);
     }
 
     public void onCommandSend() {
         Email curEmail = emails.get(counter);
         emailController.sendEmail(curEmail.getSenderAddress(), curEmail.getReceiverAddress(), "Re: " + curEmail.getSubject(), messageBody, curEmail);
-        voiceController.textToSpeech("The Email was sent.", true);
+        voiceController.textToSpeech("The Email was sent");
+        sent = true;
         readNextEmail();
     }
 
     public void onCommandChange() {
         onCommandReply();
+    }
+
+    public void onCommandContinue() {
+        voiceController.textToSpeech("Please continue your message");
+        add = true;
+        String[] possibleInputs = new String[0];
+        voiceController.startListening(possibleInputs);
     }
 }

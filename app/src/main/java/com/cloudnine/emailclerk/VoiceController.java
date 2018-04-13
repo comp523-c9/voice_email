@@ -52,6 +52,9 @@ public class VoiceController implements
     private int iterator = 0;
     public boolean go;
     private int volume;
+//    private float[] micLevels;
+//    private int counter = 0;
+
 
 //    private int count = 1;
 
@@ -63,6 +66,10 @@ public class VoiceController implements
         this.activity = activity;
         this.stateController = stateController;
         this.commandList = commandList;
+//        micLevels = new float[5];
+//        for(int i=0;i<5;i++){
+//            micLevels[i] =0;
+//        }
 
         speech = SpeechRecognizer.createSpeechRecognizer(context);
         Log.i(LOG_TAG, "isRecognitionAvailable: " + SpeechRecognizer.isRecognitionAvailable(context));
@@ -168,6 +175,14 @@ public class VoiceController implements
         speech.cancel();
         speech.destroy();
     }
+//    public float getSensitivity(){
+//        float micLevel = 0;
+//        for(int i=0;i<5;i++){
+//            micLevel += micLevels[i];
+//        }
+//        micLevel = micLevel/5;
+//        return micLevel;
+//    }
     @Override
     public void onBeginningOfSpeech() {
         Log.i(LOG_TAG, "onBeginningOfSpeech");
@@ -199,55 +214,46 @@ public class VoiceController implements
 
     @Override
     public void onPartialResults(Bundle partials) {
+        String text = "";
         Log.i(LOG_TAG, "onPartialResults");
         ArrayList<String> matches = partials
                 .getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-        String text = "";
+
+
         for (String result : matches) {
             text += result + "\n";
-            singlePartialResult = result;
-            //TODO logic for read and commands
-//            if(singlePartialResult.toLowerCase().contains("read")){
-//                stopListening();
-//                stateController.onCommandRead();
-//                singlePartialResult = "";
-//            }
-//            if(singlePartialResult.toLowerCase().contains("skip")){
-//                speech.cancel();
-//                singlePartialResult = "";
-//                stateController.onCommandSkip();
-//            }
+            singlePartialResult = text;
+
             MainActivity.returnedText.setText(singlePartialResult);
 
-            for(int i = 0; i < validCommands.length; i++)
-                if(singlePartialResult.toUpperCase().contains(validCommands[i])){
+            for (int i = 0; i < validCommands.length; i++)
+                if (singlePartialResult.toUpperCase().contains(validCommands[i])) {
                     MainActivity.returnedText.setText(singlePartialResult);
                     singlePartialResult = "";
-                    //TODO call some method from state controller
-                    if(validCommands[i].toUpperCase().contains("READ")){
+                    if (validCommands[i].toUpperCase().contains("READ")) {
                         stateController.onCommandRead();
                         break;
                     }
-                    if(validCommands[i].toUpperCase().contains("SKIP")){
+                    else if (validCommands[i].toUpperCase().contains("SKIP")) {
                         stateController.onCommandSkip();
                         break;
-                    }
-                    else if(validCommands[i].toUpperCase().contains("DELETE")){
+                    } else if (validCommands[i].toUpperCase().contains("DELETE")) {
                         stateController.onCommandDelete();
                         break;
-                    }
-                    else if(validCommands[i].toUpperCase().contains("REPLY")){
+                    } else if (validCommands[i].toUpperCase().contains("REPLY")) {
                         stateController.onCommandReply();
                         break;
-                    }
-                    else if(validCommands[i].toUpperCase().contains("CHANGE")){
+                    } else if (validCommands[i].toUpperCase().contains("CHANGE")) {
                         stateController.onCommandChange();
                         break;
-                    }
-                    else if(validCommands[i].toUpperCase().contains("SEND")){
+                    } else if (validCommands[i].toUpperCase().contains("SEND")) {
                         stateController.onCommandSend();
                         break;
+                    } else if (validCommands[i].toUpperCase().contains("ADD")) {
+                        stateController.onCommandContinue();
+                        break;
                     }
+
                 }
         }
 
@@ -290,7 +296,14 @@ public class VoiceController implements
     @Override
     public void onRmsChanged(float rmsdB)
     {
-        //Log.i(LOG_TAG, "onRmsChanged: " + rmsdB);
+//        micLevels[counter] = rmsdB;
+//        counter++;
+//        if(counter >= 5){
+//            counter = 0;
+//        }
+//        if(rmsdB>2) {
+//            Log.i(LOG_TAG, "onRmsChanged: " + rmsdB);
+//        }
     }
 
     public static String getErrorText(int errorCode) {
