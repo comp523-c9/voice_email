@@ -98,9 +98,66 @@ public class EmailController {
     }
 
     public void fetchNewEmails(Email startEmail, Email endEmail) {
-        String startDate = startEmail.getDate();
-        String endDate = endEmail.getDate();
+        String startDate = convertDate(startEmail.getDate());
+        String endDate = convertDate(endEmail.getDate());
         new AsyncGetEmails(startDate, endDate).execute("10", "true");
+    }
+
+    /**
+     * @param date  "DAY, DD MMM YYYY"
+     * @return YYYY/MM/DD for use in
+     * @see fetchNewEmails
+     **/
+    private String convertDate(String date) {
+        String convertedDate = "";
+
+        //Add the year
+        convertedDate += date.substring(12, 16) + "/";
+
+        // Switch statement to add the month
+        switch(date.substring(8, 11)) {
+            case "Jan":
+                convertedDate += "01/";
+                break;
+            case "Feb":
+                convertedDate += "02/";
+                break;
+            case "Mar":
+                convertedDate += "03/";
+                break;
+            case "Apr":
+                convertedDate += "04/";
+                break;
+            case "May":
+                convertedDate += "05/";
+                break;
+            case "Jun":
+                convertedDate += "06/";
+                break;
+            case "Jul":
+                convertedDate += "07/";
+                break;
+            case "Aug":
+                convertedDate += "08/";
+                break;
+            case "Sep":
+                convertedDate += "9/";
+                break;
+            case "Oct":
+                convertedDate += "10/";
+                break;
+            case "Nov":
+                convertedDate += "11/";
+                break;
+            case "Dec":
+                convertedDate += "12/";
+                break;
+        }
+
+        //Add the day
+        convertedDate += date.substring(5, 7);
+
+        return convertedDate;
     }
 
     private class AsyncGetEmails extends AsyncTask<String, Void, List<Email>> {
@@ -145,8 +202,9 @@ public class EmailController {
             if (getNewBatch.equals("false")) {
                 listResponse = mService.users().messages().list("me").setLabelIds(labels).setMaxResults(new Long(num)).execute();
             } else {
+                String query = "before:" + endDate + " after:" + startDate;
                 listResponse = mService.users().messages().list("me").setLabelIds(labels).setMaxResults(new Long(num))
-                        .setQ("before:2018/04/05").execute();
+                        .setQ(query).execute();
             }
 
             final List<com.google.api.services.gmail.model.Message> messages = new ArrayList<com.google.api.services.gmail.model.Message>();
