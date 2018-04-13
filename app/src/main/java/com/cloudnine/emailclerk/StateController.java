@@ -1,5 +1,7 @@
 package com.cloudnine.emailclerk;
 
+import android.app.Activity;
+import android.content.Context;
 import android.speech.tts.Voice;
 
 import java.util.*;
@@ -23,66 +25,29 @@ public class StateController
     private EmailController emailController;
     private String userEmail;
     private String userName;
-
-    /**
-     * A simple enumeration to hold the current activity of the app
-     */
-    public enum MainState
-    {
-        /**
-         * The app has just opened and needs to perform certain checks and setup activities
-         */
-        OPENED,
-
-        /**
-         * The app is listing emails in order
-         * @see
-         */
-        LISTING,
-
-        /**
-         * The app is reading out a specific email
-         */
-        READING,
-
-        /**
-         * The app is composing a new email
-         */
-        COMPOSING
-    }
-
-    private MainState state;
-
     private com.google.api.services.gmail.Gmail mService;
-
-    /**
-     * Every Email currently fetched from the EmailController
-     * @see Email
-     * @see EmailController
-     * @todo Alec, is this correct?
-     */
     public List<Email> emails;
+    private int counter;
+    private String[] listingState = {"READ","SKIP", "DELETE"};
+    private String messageBody;
+    private int fetchNumber; //The number of times new emails are fetched (50 at a time)
 
-    /**
-     * Generate a new StateController
-     * @param mainActivity Reference to the mainActivity in case we need to do GUI related things (is this necessary?)
-     * @param mService The Gmail mailbox object
-     * @see MainActivity
-     * @see com.google.api.services.gmail.Gmail
-     */
-    StateController(MainActivity mainActivity, com.google.api.services.gmail.Gmail mService)
+    StateController(MainActivity mainActivity, Context context, Activity activity, com.google.api.services.gmail.Gmail mService)
     {
         this.master = mainActivity;
         this.mService = mService;
-        this.state = MainState.OPENED;
+        this.counter = 0;
+        messageBody = "";
+        fetchNumber = 0;
+        emails = new ArrayList<Email>();
 
         emailController = new EmailController(this, mService);
-        voiceController = new VoiceController(master.getApplicationContext(), master, this);
+        voiceController = new VoiceController(context, activity, this, listingState);
         //settings = new SettingsController();
 
         /* THIS IS A TEST TO FETCH EMAILS WITH THE EMAIL CONTROLLER */
         //emailControler.getNewEmails();
-        emailController.getNewEmails(1);
+        emailController.getNewEmails(7);
     }
 
     /**
@@ -91,186 +56,71 @@ public class StateController
     public void onEmailsRetrieved()
     {
         Email curEmail = emails.get(0);
-        //String output = "Hey dude, you got a new email from " + curEmail.getSenderName() + " with the subject " + curEmail.getSubject();
-        //voiceController.textToSpeech(output);
-        //voiceController.startListening();
+        String output = "New email from " + curEmail.getSenderName() + " with the subject " + curEmail.getSubject() + ". Would you like to read, skip or delete?";
+        voiceController.textToSpeech(output);
+        voiceController.startListening(listingState);
         this.userEmail = emails.get(0).getReceiverAddress();
         this.userName = emails.get(0).getSenderName();
-        emailController.deleteEmail(curEmail.getThreadId());
     }
 
-    /**
-     * Continually get emails from the emails list and read them out
-     * @param pointer Which email in the list to start with
-     */
-    public void startListing(int pointer)
-    {
-        //TODO, need some way to interrupt this on a SKIP command. I recommend having voiceController throw an Exception
-        while(state == MainState.LISTING)
-        {
-            Email current = emails.get(pointer);
-            VoiceController.textToSpeech(current.getSubject());
-            VoiceController.textToSpeech("From " + current.getSenderName());
-            pointer++;
-
-            String command = VoiceController.question("What would you like to do?");
-
-            if(command != null)
-            {
-                sendCommand(command, current);
-            }
+    public void readNextEmail() {
+        counter++;
+        if (counter == emails.size()) {
+            voiceController.textToSpeech("You are out of emails. Please restart the app");
+            return;
+        } else if (counter == emails.size() - 5) {
+            emailController.fetchNewEmails(emails.get(fetchNumber * 10), emails.get(emails.size() - 1));
+        } else {
+            Email curEmail = emails.get(counter);
+            String output = "New email from " + curEmail.getSenderName() + " with the subject " + curEmail.getSubject() + ". Would you like to read, skip or delete?";
+            String[] possibleInputs = new String[3];
+            possibleInputs[0] = "SKIP";
+            possibleInputs[1] = "DELETE";
+            possibleInputs[2] = "READ";
+            voiceController.textToSpeech(output);
+            voiceController.startListening(possibleInputs);
         }
     }
 
-    /**
-     * Begin reading every sentence in the passed email
-     * @param current The email to read
-     */
-    public void startReading(Email current)
-    {
-        Iterable<String> lines = Arrays.asList(current.getMessage().split("\\."));
-        Iterator<String> iter = lines.iterator();
-        while(state == MainState.READING && iter.hasNext())
-        {
-            try
-            {
-                VoiceController.textToSpeech(iter.next());
-            }
-            catch(Exception e)
-            {
-                state = MainState.LISTING;
-            }
-
-            String command = VoiceController.question("What would you like to do?");
-
-            if(command != null)
-            {
-                sendCommand(command, current);
-            }
-        }
+    public void onCommandDelete() {
+        emailController.deleteEmail(emails.get(counter).getID());
+        readNextEmail();
+    }
+    public void onCommandRead() {
+        voiceController.textToSpeech(emails.get(counter).getMessage() + " Would you like to reply, skip or delete?");
+        String[] possibleInputs = new String[3];
+        possibleInputs[0] = "SKIP";
+        possibleInputs[1] = "DELETE";
+        possibleInputs[2] = "REPLY";
+        voiceController.startListening(possibleInputs);
+    }
+    public void onCommandSkip() {
+        readNextEmail();
+    }
+    public void onCommandReply() {
+        voiceController.textToSpeech("Please state your desired message.");
+        String[] possibleInputs = new String[0];
+        voiceController.startListening(possibleInputs);
     }
 
-    public void draftEmail(String recipient, String subject, Email email)
-    {
-        String body = "";
-        while(!body.contains("FINISH"))
-        {
-            body += voiceController.question("");
-        }
-        if(!subject.contains("Re: ")) { subject = "Re: " + subject; }
-        emailController.sendEmail(recipient, userEmail, subject, body, email);
+    public void onReplyAnswered(String message) {
+        voiceController.textToSpeech("Your message was recorded as: " + message + " Would you like to send, change, or skip?");
+        this.messageBody = message;
+        String[] possibleInputs = new String[3];
+        possibleInputs[0] = "SEND";
+        possibleInputs[1] = "CHANGE";
+        possibleInputs[2] = "SKIP";
+        voiceController.startListening(possibleInputs);
     }
 
-    /**
-     * Process the command phrase
-     * @param command The single word command phrase
-     * @param current The potentially relevant current email
-     */
-    public void sendCommand(String command, Email current)
-    {
-        switch(state)
-        {
-            case OPENED:
-                openCommand(command, current);
-                break;
-            case LISTING:
-                listingCommand(command, current);
-                break;
-            case READING:
-                readingCommand(command, current);
-                break;
-            case COMPOSING:
-                //composingCommand(command); Need to rework the flow here
-                break;
-        }
+    public void onCommandSend() {
+        Email curEmail = emails.get(counter);
+        emailController.sendEmail(curEmail.getSenderAddress(), curEmail.getReceiverAddress(), "Re: " + curEmail.getSubject(), messageBody, curEmail);
+        voiceController.textToSpeech("The Email was sent.");
+        readNextEmail();
     }
 
-    private void openCommand(String command, Email current)
-    {
-        switch(command)
-        {
-
-        }
-    }
-
-    private void listingCommand(String command, Email current)
-    {
-        switch(command)
-        {
-            case "SKIP":
-                state = MainState.LISTING;
-                break;
-            case "DELETE":
-                emailController.deleteEmail(current.getThreadId());
-                break;
-            case "READ":
-                state = MainState.READING;
-                startReading(current);
-                break;
-            case "COMPOSE":
-                //email.composeNew();
-                state = MainState.COMPOSING;
-                break;
-            default:
-                VoiceController.textToSpeech("Command not recognized");
-                break;
-        }
-    }
-
-    private void readingCommand(String command, Email current)
-    {
-        switch(command)
-        {
-            case "SKIP":
-                state = MainState.LISTING;
-                break;
-            case "REPLY ALL":
-                if(voiceController.question("Are you sure you want to reply all?") == "YES")
-                {
-                    state = MainState.COMPOSING;
-                    //draftEmail(current.getSenderAddress(), current); //TODO We need a way to get multiple senders
-                }
-                else { state = MainState.READING; }
-                break;
-            case "REPLY":
-                state = MainState.COMPOSING;
-                state = MainState.COMPOSING;
-                draftEmail(current.getSenderAddress(), current.getSubject(), current); //TODO We need a way to get multiple senders
-                break;
-            case "FORWARD":
-                String recipient = voiceController.question("To whom would you like to forward this email?");
-                while(voiceController.question("Do you want to forward this email to " + recipient + "?") != "YES")
-                    recipient = voiceController.question("To whom would you like to forward this email?");
-                emailController.sendEmail(recipient, userEmail, "Fwd: " + current.getSubject(), current.getSenderEmail());
-                break;
-            case "DELETE":
-                if(voiceController.question("Are you sure you want to delete?") == "YES")
-                {
-                    emailController.deleteEmail(current.getThreadId());
-                    state = MainState.LISTING;
-                }
-                break;
-            default:
-                VoiceController.textToSpeech("Command not recognized");
-                break;
-        }
-    }
-
-    private void composingCommand(String command, String body, String recipient)
-    {
-        if(command == "FINISH")
-        {
-            VoiceController.textToSpeech(body);
-            if(voiceController.question("Would you like to send this email?") == "YES")
-            {
-                emailController.sendEmail(recipient, userEmail, "subject", body);
-                state = MainState.LISTING;
-            }
-            else { }
-        }
-        else
-        {
-            body += command; //I will probably rework this entirely
-        }
+    public void onCommandChange() {
+        onCommandReply();
     }
 }

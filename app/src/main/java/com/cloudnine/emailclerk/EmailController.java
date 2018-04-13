@@ -33,12 +33,9 @@ import com.google.api.client.repackaged.org.apache.commons.codec.binary.StringUt
 
 import com.google.api.client.googleapis.json.GoogleJsonError;
 import com.google.api.client.http.HttpHeaders;
-import com.google.api.services.gmail.*;
 import com.google.api.services.gmail.model.*;
 
 import java.io.ByteArrayOutputStream;
-
-import org.json.JSONObject;
 
 /**
  * Created by alecs on 4/4/2018.
@@ -51,18 +48,15 @@ public class EmailController {
     volatile boolean finished = false;
     StateController stateController; // Reference to StateController
 
-    protected final int GET_NEW_EMAILS = 1;
-    private final int SEND_EMAIL     = 2;
-    private final int DELETE_EMAIL   = 3;
-
     EmailController(StateController stateController, com.google.api.services.gmail.Gmail mService) {
         this.stateController = stateController;
         this.mService = mService;
     }
 
     public void getNewEmails(int num) {
-        String[] params = new String[1];
+        String[] params = new String[2];
         params[0] = Integer.toString(num);
+        params[1] = "false";
         new AsyncGetEmails().execute(params);
     }
 
@@ -70,22 +64,6 @@ public class EmailController {
         String[] params = new String[1];
         params[0] = threadId;
         new AsyncDeleteEmail().execute(params);
-    }
-
-    public void sendEmail(Email email, String bodyText) {
-        List<String> paramsList = new ArrayList<String>();
-        paramsList.add(email.getID());
-        paramsList.add(email.getReceiverAddress());
-        paramsList.add(email.getReceiverName());
-        paramsList.add(email.getSenderAddress());
-        paramsList.add(email.getSenderName());
-        paramsList.add(email.getSubject());
-        paramsList.add(bodyText);
-
-        String[] params = new String[paramsList.size()];
-        params = paramsList.toArray(params);
-
-        new AsyncReplyToEmail().execute(params);
     }
 
     /** sendEmail() is overloaded. This is the 'compose' one **/
@@ -119,19 +97,32 @@ public class EmailController {
         new AsyncReplyToEmail().execute(params);
     }
 
+    public void fetchNewEmails(Email startEmail, Email endEmail) {
+        String startDate = startEmail.getDate();
+        String endDate = endEmail.getDate();
+        new AsyncGetEmails(startDate, endDate).execute("10", "true");
+    }
+
     private class AsyncGetEmails extends AsyncTask<String, Void, List<Email>> {
 
         Exception mLastError;
+        String startDate;
+        String endDate;
 
         AsyncGetEmails() {
             mLastError = null;
+        }
+        AsyncGetEmails(String startDate, String endDate) {
+            mLastError = null;
+            this.startDate = startDate;
+            this.endDate = endDate;
         }
 
         @Override
         protected List<Email> doInBackground(String... params) {
 
             try {
-                return asyncGetEmails(Integer.parseInt(params[0]));
+                return asyncGetEmails(Integer.parseInt(params[0]), params[1]);
             } catch (Exception e) {
                 mLastError = e;
                 cancel(true);
@@ -139,7 +130,7 @@ public class EmailController {
             }
         }
 
-        private List<Email> asyncGetEmails(int num) throws IOException {
+        private List<Email> asyncGetEmails(int num, String getNewBatch) throws IOException {
 
             // Create list to store email objects...
             List<Email> emailList = new ArrayList<Email>();
@@ -147,9 +138,19 @@ public class EmailController {
             // Initialize batch object
             BatchRequest batch = mService.batch();
 
-            ListMessagesResponse listResponse = mService.users().messages().list("me").setMaxResults(new Long(num)).execute();
+            List<String> labels = new ArrayList<String>();
+            labels.add("INBOX");
+            ListMessagesResponse listResponse;
+
+            if (getNewBatch.equals("false")) {
+                listResponse = mService.users().messages().list("me").setLabelIds(labels).setMaxResults(new Long(num)).execute();
+            } else {
+                listResponse = mService.users().messages().list("me").setLabelIds(labels).setMaxResults(new Long(num))
+                        .setQ("before:2018/04/05").execute();
+            }
 
             final List<com.google.api.services.gmail.model.Message> messages = new ArrayList<com.google.api.services.gmail.model.Message>();
+
             JsonBatchCallback<com.google.api.services.gmail.model.Message> callback = new JsonBatchCallback<com.google.api.services.gmail.model.Message>() {
                 public void onSuccess(com.google.api.services.gmail.model.Message message, HttpHeaders responseHeaders) {
                     System.out.println("MessageThreadID:" + message.getThreadId());
@@ -160,8 +161,7 @@ public class EmailController {
                 }
 
                 @Override
-                public void onFailure(GoogleJsonError e, HttpHeaders responseHeaders)
-                        throws IOException {
+                public void onFailure(GoogleJsonError e, HttpHeaders responseHeaders) throws IOException {
                 }
             };
 
@@ -180,11 +180,12 @@ public class EmailController {
                 String receiver = "";
                 String sender = "";
                 String subject = "";
+                String date = "";
 
 
                 List<MessagePartHeader> headers = curMessage.getPayload().getHeaders();
                 for(MessagePartHeader header:headers){
-                    if (subject == "" || sender == "" || receiver == "") {
+                    if (subject == "" || sender == "" || receiver == "" || date == "") {
                         String name = header.getName();
                         if(name.equals("Subject")) {
                             subject = header.getValue();
@@ -192,20 +193,48 @@ public class EmailController {
                             sender = header.getValue();
                         } else if (name.equals("To")) {
                             receiver = header.getValue();
+                        } else if (name.equals("Date")) {
+                            date = header.getValue();
                         }
                     }
                 }
 
-                String receiverAddress = receiver.substring((receiver.indexOf("<")+1), receiver.indexOf(">"));
-                String receiverName = receiver.substring(0, receiver.indexOf("<")-1);
-                String senderAddress = sender.substring((sender.indexOf("<")+1), sender.indexOf(">"));
-                String senderName = sender.substring(0, sender.indexOf("<")-1);
+                String receiverAddress;
+                String receiverName;
+                String senderAddress;
+                String senderName;
 
-                String messageBody = curMessage.getSnippet();
-                //String messageBody = StringUtils.newStringUtf8(Base64.decodeBase64(curMessage.getPayload().getParts().get(0).getBody().getData().trim().toString())); //TODO
-                //messageBody = messageBody.replaceAll("(\r\n|\n\r|\n|\r)", "");
+                if (receiver.indexOf("<") > 0) {
+                    receiverAddress = receiver.substring((receiver.indexOf("<")+1), receiver.indexOf(">"));
+                    receiverName = receiver.substring(0, receiver.indexOf("<")-1);
+                } else {
+                    receiverAddress = receiver;
+                    receiverName = "";
+                }
+                if (sender.indexOf("<") > 0) {
+                    senderAddress = sender.substring((sender.indexOf("<")+1), sender.indexOf(">"));
+                    senderName = sender.substring(0, sender.indexOf("<")-1);
+                } else {
+                    senderAddress = sender;
+                    senderName = "";
+                }
 
-                emailList.add(new Email(id, threadId, receiverAddress, receiverName, senderAddress, senderName, subject, messageBody));
+                //String messageBody = curMessage.getSnippet();
+//                String messageBody = StringUtils.newStringUtf8(Base64.decodeBase64(curMessage.getPayload().getParts().get(0).getBody().getData().trim().toString())); //TODO
+//                messageBody = messageBody.replaceAll("(\r\n|\n\r|\n|\r)", "");
+                String messageBody = "There is no message body";
+                if (!curMessage.getPayload().getMimeType().equals("text/html")) {
+                    try {
+                        messageBody = StringUtils.newStringUtf8(Base64.decodeBase64(curMessage.getPayload().getParts().get(0).getBody().getData().trim().toString())); //TODO
+                        messageBody = messageBody.replaceAll("(\r\n|\n\r|\n|\r)", "");
+                    } catch(Exception e) {
+
+                    }
+                }
+
+
+
+                emailList.add(new Email(id, threadId, receiverAddress, receiverName, senderAddress, senderName, subject, messageBody, date));
             }
             return emailList;
         }
@@ -213,7 +242,7 @@ public class EmailController {
         @Override
         protected void onPostExecute(List<Email> output) {
             if (output != null && output.size() != 0) {
-                stateController.emails = output;
+                stateController.emails.addAll(output);
                 stateController.onEmailsRetrieved();
             }
         }
