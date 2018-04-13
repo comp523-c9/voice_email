@@ -21,7 +21,7 @@ public class StateController
 
     private MainActivity master;
     //private SettingsController settings;
-    private VoiceController voiceController;
+    public static VoiceController voiceController;
     private EmailController emailController;
     private String userEmail;
     private String userName;
@@ -44,7 +44,7 @@ public class StateController
 
         /* THIS IS A TEST TO FETCH EMAILS WITH THE EMAIL CONTROLLER */
         //emailControler.getNewEmails();
-        emailController.getNewEmails(400);
+        emailController.getNewEmails(50);
     }
 
     /**
@@ -111,7 +111,7 @@ public class StateController
     public void onCommandSend() {
         Email curEmail = emails.get(counter);
         emailController.sendEmail(curEmail.getSenderAddress(), curEmail.getReceiverAddress(), "Re: " + curEmail.getSubject(), messageBody, curEmail);
-        voiceController.textToSpeech("The Email was sent.");
+        voiceController.textToSpeech("The Email was sent.", true);
         readNextEmail();
     }
 

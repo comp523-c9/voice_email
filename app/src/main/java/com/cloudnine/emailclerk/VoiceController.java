@@ -51,6 +51,7 @@ public class VoiceController implements
     private String[] validCommands;
     private int iterator = 0;
     public boolean go;
+    private int volume;
 
 //    private int count = 1;
 
@@ -66,14 +67,13 @@ public class VoiceController implements
         speech = SpeechRecognizer.createSpeechRecognizer(context);
         Log.i(LOG_TAG, "isRecognitionAvailable: " + SpeechRecognizer.isRecognitionAvailable(context));
         speech.setRecognitionListener(this);
-//        AudioManager amanager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
-//        amanager.setStreamVolume(AudioManager.STREAM_NOTIFICATION, AudioManager.ADJUST_MUTE, 0);
         recognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE,
                 "en");
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                 RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
+//        recognizerIntent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 20000);
         ActivityCompat.requestPermissions
                 (activity,
                         new String[]{Manifest.permission.RECORD_AUDIO},
@@ -109,6 +109,7 @@ public class VoiceController implements
                 @Override
                 public void onInit(int i) {
                     tts.setLanguage(Locale.US);
+                    tts.setSpeechRate((float)0.8);
                     tts.speak(inputs, TextToSpeech.QUEUE_FLUSH, null);
                 }
             });
@@ -118,12 +119,32 @@ public class VoiceController implements
 
         }
     }
+    public static void textToSpeech(String input, boolean bool){
+        final String inputs = input;
+        if(tts == null) {
+            // Instantiate TTS Object
+            tts = new TextToSpeech(context, new TextToSpeech.OnInitListener() {
+                @Override
+                public void onInit(int i) {
+                    tts.setLanguage(Locale.US);
+                    tts.setSpeechRate((float)0.8);
+                    tts.speak(inputs, TextToSpeech.QUEUE_ADD, null);
+                }
+            });
+        }
+        else{
+            tts.speak(input, TextToSpeech.QUEUE_ADD, null);
+
+        }
+    }
 
     public String getSpeechResult(){
         return partialResult;
     }
 
     public void startListening(String[] validCommands){
+        volume = MainActivity.amanager.getStreamVolume(AudioManager.STREAM_MUSIC); // getting system volume into var for later un-muting
+        MainActivity.amanager.setStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE, 0);
         this.validCommands = validCommands;
         speech.stopListening();
         speech.cancel();
@@ -138,11 +159,14 @@ public class VoiceController implements
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                 RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
+//        recognizerIntent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 20000);
         speech.startListening(recognizerIntent);
 
     }
-    private void stopListening(){
+    public void stopListening(){
         speech.stopListening();
+        speech.cancel();
+        speech.destroy();
     }
     @Override
     public void onBeginningOfSpeech() {
@@ -161,6 +185,7 @@ public class VoiceController implements
 
     @Override
     public void onError(int errorCode) {
+//        MainActivity.amanager.setStreamVolume(AudioManager.STREAM_MUSIC, volume , 0);
         String errorMessage = getErrorText(errorCode);
         Log.d(LOG_TAG, "FAILED " + errorMessage);
         startListening(validCommands);
@@ -235,6 +260,7 @@ public class VoiceController implements
     @Override
     public void onReadyForSpeech(Bundle arg0) {
         Log.i(LOG_TAG, "onReadyForSpeech");
+        MainActivity.amanager.setStreamVolume(AudioManager.STREAM_MUSIC, volume , 0);
         go = true;
     }
 

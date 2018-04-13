@@ -309,6 +309,8 @@ public class GmailAuth extends Activity implements EasyPermissions.PermissionCal
                 .setApplicationName("Email Clerk")
                 .build();
 
+        new TestAPICall(mService).execute();
+
         Intent data = new Intent();
         if (getParent() == null) {
             setResult(Activity.RESULT_OK, data);
@@ -341,7 +343,7 @@ public class GmailAuth extends Activity implements EasyPermissions.PermissionCal
 
         private ListMessagesResponse testAPICall() throws IOException {
 
-            ListMessagesResponse listResponse = mService.users().messages().list("me").execute();
+            ListMessagesResponse listResponse = mService.users().messages().list("me").setMaxResults(new Long(1)).execute();
             return listResponse;
         }
 

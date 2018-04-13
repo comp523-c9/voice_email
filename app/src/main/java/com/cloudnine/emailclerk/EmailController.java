@@ -291,8 +291,9 @@ public class EmailController {
                 byte[] bytes = buffer.toByteArray();
                 String encodedEmail = Base64.encodeBase64URLSafeString(bytes);
                 com.google.api.services.gmail.model.Message message = new com.google.api.services.gmail.model.Message();
+                com.google.api.services.gmail.model.Draft draft = new com.google.api.services.gmail.model.Draft();
                 message.setRaw(encodedEmail);
-                mService.users().messages().send("me", message).execute();
+                mService.users().drafts().send("me", draft).execute();
             } catch (Exception e) {
                 e.printStackTrace();
             }

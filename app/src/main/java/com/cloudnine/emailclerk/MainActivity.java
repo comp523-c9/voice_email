@@ -23,6 +23,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.media.AudioManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
@@ -57,12 +58,26 @@ public class MainActivity extends AppCompatActivity {
     static final int PASS_GMAIL_OBJECT = 1;
     static final int RESULT_OKAY = 2;
     public static TextView returnedText;
+    public static AudioManager amanager;
+    public StateController stateController;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         returnedText = (TextView) findViewById(R.id.text);
+        amanager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+//        amanager.setStreamVolume(AudioManager.STREAM_NOTIFICATION, AudioManager.ADJUST_MUTE, 0);
+//        amanager.setStreamVolume(AudioManager.STREAM_ALARM, AudioManager.ADJUST_MUTE, 0);
+//        amanager.setStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE, 0);
+//        amanager.setStreamVolume(AudioManager.STREAM_RING, AudioManager.ADJUST_MUTE, 0);
+//        amanager.setStreamVolume(AudioManager.STREAM_SYSTEM, AudioManager.ADJUST_MUTE, 0);
+//        amanager.setStreamVolume(AudioManager.STREAM_NOTIFICATION, AudioManager.ADJUST_UNMUTE, 0);
+//        amanager.setStreamVolume(AudioManager.STREAM_ALARM, AudioManager.ADJUST_UNMUTE, 0);
+//        amanager.setStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0);
+//        amanager.setStreamVolume(AudioManager.STREAM_RING, AudioManager.ADJUST_UNMUTE, 0);
+//        amanager.setStreamVolume(AudioManager.STREAM_SYSTEM, AudioManager.ADJUST_UNMUTE, 0);
+
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.mCustomToolbar);
         setSupportActionBar(toolbar);
@@ -101,8 +116,26 @@ public class MainActivity extends AppCompatActivity {
                 //GmailAuth.SendSerializedService sss = (GmailAuth.SendSerializedService) getIntent().getSerializableExtra("serialize_data");
                 //StateController stateController = new StateController(sss.getmService());
                 com.google.api.services.gmail.Gmail mService = GmailAuth.mService;
-                StateController stateController = new StateController(this, MainActivity.this, MainActivity.this, mService);
+                stateController = new StateController(this, MainActivity.this, MainActivity.this, mService);
             }
         }
     }
+
+    //TODO ondestroy call tts end
+    @Override
+    public void onDestroy(){
+        if(stateController!=null){
+            stateController.voiceController.textToSpeech("");
+            stateController.voiceController.stopListening();
+        }
+        super.onDestroy();
+    }
+//    @Override
+//    public void onStop(){
+//        super.onStop();
+//        if(stateController!=null){
+//            stateController.voiceController.textToSpeech("");
+//            stateController.voiceController.stopListening();
+//        }
+//    }
 }
