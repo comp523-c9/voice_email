@@ -101,7 +101,7 @@ public class EmailController {
     public void fetchNewEmails(Email startEmail, Email endEmail) {
         String startDate = convertDate(startEmail.getDate());
         String endDate = convertDate(endEmail.getDate());
-        new AsyncGetEmails(startDate, endDate).execute("50", "true");
+        new AsyncGetEmails(startDate, endDate).execute(Integer.toString(stateController.EMAILS_TO_FETCH_NUM), "true");
     }
 
     /**
@@ -110,10 +110,10 @@ public class EmailController {
      **/
     private String convertDate(String inputDate) {
         String convertedDate = "";
-        SimpleDateFormat df = new SimpleDateFormat("dd MMM yyyy HH:mm:ss");
+        SimpleDateFormat df = new SimpleDateFormat("dd MMM yyyy HH:mm:ss ZZZZZ");
 
         try {
-            Date date = df.parse(inputDate.substring(5, 26));
+            Date date = df.parse(inputDate.substring(5));
             convertedDate = Long.toString(date.getTime());
         } catch(Exception e) {
             Exception b = e;
@@ -163,7 +163,7 @@ public class EmailController {
             if (getNewBatch.equals("false")) {
                 listResponse = mService.users().messages().list("me").setLabelIds(labels).setMaxResults(new Long(num)).execute();
             } else {
-                startDate = Integer.toString(Integer.parseInt(startDate) + 1); // Add 1 second because 'after:' is inclusive
+                startDate = Integer.toString(Integer.parseInt(startDate) + 2); // Add 1 second because 'after:' is inclusive
                 String query = "before:" + endDate + " || after:" + startDate;
                 listResponse = mService.users().messages().list("me").setLabelIds(labels).setMaxResults(new Long(num))
                         .setQ(query).execute();
@@ -263,7 +263,9 @@ public class EmailController {
         protected void onPostExecute(List<Email> output) {
             if (output != null && output.size() != 0) {
                 stateController.emails.addAll(output);
-                stateController.onEmailsRetrieved();
+                if (stateController.emails.size()==stateController.STARTING_EMAIL_NUM) {
+                    stateController.onEmailsRetrieved();
+                }
             }
         }
     }

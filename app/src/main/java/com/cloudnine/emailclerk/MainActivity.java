@@ -64,13 +64,11 @@ public class MainActivity extends AppCompatActivity {
     public static AudioManager amanager;
     public StateController stateController;
 
-    public static final String PREFS_NAME = "MyPrefsFile";
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        returnedText = (TextView) findViewById(R.id.text);
+        returnedText = (TextView) findViewById(R.id.texttest);
         amanager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
 //        amanager.setStreamVolume(AudioManager.STREAM_NOTIFICATION, AudioManager.ADJUST_MUTE, 0);
 //        amanager.setStreamVolume(AudioManager.STREAM_ALARM, AudioManager.ADJUST_MUTE, 0);
@@ -87,18 +85,8 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.mCustomToolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setTitle("Email Clerk");
-        final TextView text1 = (TextView) findViewById(R.id.texttest);
+//        final TextView text1 = (TextView) findViewById(R.id.texttest);
         Button btn1 = (Button) findViewById(R.id.buttontest);
-        
-        /*btn1.setOnClickListener(new View.OnClickListener() {
-        /    public void onClick (View view){
-
-                SharedPreferences settings = getSharedPreferences(MainActivity.PREFS_NAME,0);
-                int data =settings.getInt("speed",10);
-                text1.setText(String.valueOf(data));
-            }
-        });
-        */
 
 
         // Start Gmail Authentication Activity
@@ -145,7 +133,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onDestroy(){
         if(stateController!=null){
-            stateController.onDestroy();
+            stateController.voiceController.textToSpeech("");
+            stateController.voiceController.stopListening();
         }
         super.onDestroy();
     }

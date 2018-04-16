@@ -249,7 +249,7 @@ public class VoiceController implements
                     } else if (validCommands[i].toUpperCase().contains("SEND")) {
                         stateController.onCommandSend();
                         break;
-                    } else if (validCommands[i].toUpperCase().contains("ADD")) {
+                    } else if (validCommands[i].toUpperCase().contains("CONTINUE")) {
                         stateController.onCommandContinue();
                         break;
                     }

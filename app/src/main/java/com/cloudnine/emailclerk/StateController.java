@@ -2,7 +2,7 @@ package com.cloudnine.emailclerk;
 
 import android.app.Activity;
 import android.content.Context;
-import com.google.api.services.gmail.Gmail;
+import android.speech.tts.Voice;
 
 import java.util.*;
 
@@ -21,99 +21,63 @@ public class StateController
 
     private MainActivity master;
     //private SettingsController settings;
-    private VoiceController voiceController;
+    public static VoiceController voiceController;
     private EmailController emailController;
-
-    //private String userEmail;
-    //private String userName;
-    //private Gmail service; //TODO is this still needed? Are any of these??
-
-    /**
-     * The list of currently loaded emails
-     * @see Email
-     * @see EmailController
-     */
+    private String userEmail;
+    private String userName;
+    private com.google.api.services.gmail.Gmail mService;
     public List<Email> emails;
-
-    /**
-     * The currently focused email
-     */
     private int counter;
-
-    /**
-     * Holds the state of the list emails loop
-     */
     private String[] listingState = {"READ","SKIP", "DELETE"};
-
-    /**
-     * Accumulates the message body
-     */
     private String messageBody;
     private int fetchNumber; //The number of times new emails are fetched (50 at a time)
-
-    /**
-     * @todo What the heck is this?
-     */
-    private boolean sent;
-
-    /**
-     * @todo and this??
-     */
+    private boolean read;
     private boolean add;
+    public final int STARTING_EMAIL_NUM = 50;
+    public final int EMAILS_TO_FETCH_NUM = 10;
 
-    /**
-     * Create the StateController
-     * @param mainActivity Reference to the MainActivity core class of the app
-     * @param context @todo what is Context? Why do we need it?
-     * @param activity @todo what is an Activity? Why do we need it?
-     * @param service Service object for accessing the Gmail API; needed by EmailController
-     * @see MainActivity
-     * @see Context
-     * @see Activity
-     * @see Gmail
-     * @see EmailController
-     */
-    StateController(MainActivity mainActivity, Context context, Activity activity, Gmail service)
+    StateController(MainActivity mainActivity, Context context, Activity activity, com.google.api.services.gmail.Gmail mService)
     {
         this.master = mainActivity;
-        //this.mService = service; TODO remove maybe
-        this.counter = 0;
+        this.mService = mService;
+        this.counter = -1;
         messageBody = "";
         fetchNumber = 0;
         emails = new ArrayList<Email>();
 
-        emailController = new EmailController(this, service);
+        emailController = new EmailController(this, mService);
         voiceController = new VoiceController(context, activity, this, listingState);
         //settings = new SettingsController();
 
-        emailController.getNewEmails(50);
+        /* THIS IS A TEST TO FETCH EMAILS WITH THE EMAIL CONTROLLER */
+        //emailControler.getNewEmails();
+        emailController.getNewEmails(STARTING_EMAIL_NUM);
     }
 
     /**
-     * Callback function which is called when emails are retrieved from the EmailController
-     * @see EmailController
+     * Called when email is received
      */
     public void onEmailsRetrieved()
     {
-        Email curEmail = emails.get(0);
-        String output = "New email from " + curEmail.getSenderName() + " with the subject " + curEmail.getSubject() + ". Would you like to read, skip or delete?";
-        VoiceController.textToSpeech(output);
-        voiceController.startListening(listingState);
-        //this.userEmail = emails.get(0).getReceiverAddress();
-        //this.userName = emails.get(0).getSenderName();
+        readNextEmail();
+        this.userEmail = emails.get(0).getReceiverAddress();
+        this.userName = emails.get(0).getSenderName();
     }
 
-    /**
-     * Read the next email in the list out loud and provide the user with options
-     */
-    private void readNextEmail()
-    {
+    public void readNextEmail() {
         counter++;
         if (counter == emails.size()) {
             voiceController.textToSpeech("You are out of emails. Please restart the app");
             return;
         } else if (counter == emails.size() - 5) {
-            emailController.fetchNewEmails(emails.get(fetchNumber * 10), emails.get(emails.size() - 1));
+            if (fetchNumber == 0) {
+                emailController.fetchNewEmails(emails.get(0), emails.get(emails.size() - 1));
+                counter--;
+            } else {
+                emailController.fetchNewEmails(emails.get(STARTING_EMAIL_NUM - 1 + ((fetchNumber - 1) * EMAILS_TO_FETCH_NUM)), emails.get(emails.size() - 1));
+                counter--;
+            }
+
             fetchNumber++;
         } else {
             Email curEmail = emails.get(counter);
@@ -122,74 +86,49 @@ public class StateController
             possibleInputs[0] = "SKIP";
             possibleInputs[1] = "DELETE";
             possibleInputs[2] = "READ";
-
-            if(sent)
-            {
-                VoiceController.textToSpeech(output, true);
-                sent = false;
+            if(read){
+                voiceController.textToSpeech(output, true);
+                read = false;
             }
-            else
-            {
-                VoiceController.textToSpeech(output);
+            else {
+                voiceController.textToSpeech(output);
             }
-
             voiceController.startListening(possibleInputs);
         }
     }
 
-    /**
-     * Delete the current email
-     */
-    public void onCommandDelete()
-    {
+    public void onCommandDelete() {
         emailController.deleteEmail(emails.get(counter).getID());
+        voiceController.textToSpeech("The Email was deleted");
+        read = true;
         readNextEmail();
     }
-
-    /**
-     * Read the message body of the current email
-     */
-    public void onCommandRead()
-    {
-        VoiceController.textToSpeech(emails.get(counter).getMessage() + " Would you like to reply, skip or delete?");
+    public void onCommandRead() {
+        voiceController.textToSpeech(emails.get(counter).getMessage() + " Would you like to skip, delete, or reply?");
         String[] possibleInputs = new String[3];
         possibleInputs[0] = "SKIP";
         possibleInputs[1] = "DELETE";
         possibleInputs[2] = "REPLY";
         voiceController.startListening(possibleInputs);
     }
-
-    /**
-     * Skip/Do Nothing with the current email
-     */
-    public void onCommandSkip() { readNextEmail(); }
-
-    /**
-     * Compose a new email as a reply to the current one
-     */
-    public void onCommandReply()
-    {
-        VoiceController.textToSpeech("Please state your desired message.");
+    public void onCommandSkip() {
+        readNextEmail();
+    }
+    public void onCommandReply() {
+        voiceController.textToSpeech("Please state your desired message.");
         String[] possibleInputs = new String[0];
         voiceController.startListening(possibleInputs);
     }
 
-    /**
-     * I am not sure what this does. @todo help?
-     * @param message A string of some sort?
-     */
-    public void onReplyAnswered(String message)
-    {
-        if(add)
-        {
+    public void onReplyAnswered(String message) {
+        if(add){
             this.messageBody = messageBody + " " + message;
             add = false;
-        } else
-        {
+        }
+        else {
             this.messageBody = message;
         }
-
-        VoiceController.textToSpeech("Your message was recorded as: " + messageBody + " Would you like to skip, change, continue, or send?");
+        voiceController.textToSpeech("Your message was recorded as: " + messageBody + " Would you like to skip, change, continue, or send?");
         String[] possibleInputs = new String[4];
         possibleInputs[0] = "SEND";
         possibleInputs[1] = "CHANGE";
@@ -198,80 +137,22 @@ public class StateController
         voiceController.startListening(possibleInputs);
     }
 
-    /**
-     * Send the email? Reply? @todo this is very unclear
-     */
-    public void onCommandSend()
-    {
+    public void onCommandSend() {
         Email curEmail = emails.get(counter);
         emailController.sendEmail(curEmail.getSenderAddress(), curEmail.getReceiverAddress(), "Re: " + curEmail.getSubject(), messageBody, curEmail);
-        VoiceController.textToSpeech("The Email was sent");
-        sent = true;
+        voiceController.textToSpeech("The Email was sent");
+        read = true;
         readNextEmail();
     }
 
-    /**
-     * Change the email being composed
-     */
-    public void onCommandChange() { onCommandReply(); }
+    public void onCommandChange() {
+        onCommandReply();
+    }
 
-    /**
-     * Not quite sure what this does
-     */
-    public void onCommandContinue()
-    {
-        VoiceController.textToSpeech("Please continue your message");
+    public void onCommandContinue() {
+        voiceController.textToSpeech("Please continue your message");
         add = true;
         String[] possibleInputs = new String[0];
         voiceController.startListening(possibleInputs);
-    }
-
-    /**
-     * Clean up anything needed to safely destroy the app
-     */
-    public void onDestroy()
-    {
-        VoiceController.textToSpeech("");
-        voiceController.stopListening();
-    }
-}
-
-class EmailIterator<T extends Email> implements Iterator<T>
-{
-    private T[] storedEmails;
-    private EmailController controller;
-    private int pointer;
-
-    private final int MARGIN = 10;
-    private final int BUFFER = 50;
-
-    public EmailIterator(EmailController controller)
-    {
-        this.storedEmails = (T[]) new Object[BUFFER];
-        this.controller = controller;
-        this.pointer = 0;
-    }
-
-    public boolean hasNext()
-    {
-        return pointer < BUFFER - 1;
-    }
-
-    public T next()
-    {
-        if(!hasNext())
-        {
-            throw new NoSuchElementException();
-        }
-        else
-        {
-            if(BUFFER - pointer < MARGIN)
-            {
-                controller.getNewEmails(10);
-            }
-
-            pointer++;
-            return storedEmails[pointer];
-        }
     }
 }
