@@ -1,10 +1,12 @@
 package com.cloudnine.emailclerk;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.app.Activity;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.SeekBar;
 import android.widget.Switch;
@@ -22,6 +24,8 @@ public class SettingsController extends AppCompatActivity {
     private static int tts_progress_value = 10;
     private static boolean skip_read;
 
+
+
     public static int getTTSSpeed (){
         return tts_progress_value;
     }
@@ -34,9 +38,14 @@ public class SettingsController extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
+
+        SharedPreferences settings = getSharedPreferences(MainActivity.PREFS_NAME,0);
+        SharedPreferences settings2 = getSharedPreferences(MainActivity.PREFS_NAME,0);
         toolbar = (Toolbar) findViewById(R.id.mCustomToolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        tts_progress_value=settings.getInt("speed",tts_progress_value);
+        skip_read=settings.getBoolean("skipread",skip_read);
         ttsSpeedBar();
         skipReadSwitch();
     }
@@ -56,6 +65,11 @@ public class SettingsController extends AppCompatActivity {
                     @Override
                     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                         tts_progress_value = progress;
+                        SharedPreferences settings = getSharedPreferences(MainActivity.PREFS_NAME,0);
+                        SharedPreferences.Editor editor = settings.edit();
+                        editor.putInt("speed",tts_progress_value);
+                        editor.commit();
+
                         tts_speedtext.setText(String.valueOf(progress * 10) + "%");
                     }
 
@@ -79,9 +93,17 @@ public class SettingsController extends AppCompatActivity {
              public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                  if (isChecked == true){
                      skip_read = true;
+                     SharedPreferences settings2 = getSharedPreferences(MainActivity.PREFS_NAME,0);
+                     SharedPreferences.Editor editor = settings2.edit();
+                     editor.putBoolean("skipread",skip_read);
+                     editor.commit();
                  }
                  else if (isChecked == false){
                      skip_read = false;
+                     SharedPreferences settings2 = getSharedPreferences(MainActivity.PREFS_NAME,0);
+                     SharedPreferences.Editor editor = settings2.edit();
+                     editor.putBoolean("skipread",skip_read);
+                     editor.commit();
                  }
              }
          });

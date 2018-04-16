@@ -60,6 +60,8 @@ public class MainActivity extends AppCompatActivity {
     static final int PASS_GMAIL_OBJECT = 1;
     static final int RESULT_OKAY = 2;
 
+    public static final String PREFS_NAME = "MyPrefsFile";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -70,6 +72,16 @@ public class MainActivity extends AppCompatActivity {
         getSupportActionBar().setTitle("Email Clerk");
         final TextView text1 = (TextView) findViewById(R.id.texttest);
         Button btn1 = (Button) findViewById(R.id.buttontest);
+        
+        /*btn1.setOnClickListener(new View.OnClickListener() {
+        /    public void onClick (View view){
+
+                SharedPreferences settings = getSharedPreferences(MainActivity.PREFS_NAME,0);
+                int data =settings.getInt("speed",10);
+                text1.setText(String.valueOf(data));
+            }
+        });
+        */
 
 
         // Start Gmail Authentication Activity
