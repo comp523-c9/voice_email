@@ -125,8 +125,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onDestroy(){
         if(stateController!=null){
-            stateController.voiceController.textToSpeech("");
-            stateController.voiceController.stopListening();
+            stateController.onDestroy();
         }
         super.onDestroy();
     }
