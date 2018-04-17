@@ -95,12 +95,13 @@ public class EmailController {
             int date =Integer.parseInt(convertDate(email.getDate()));
             if (date < earliestDate || earliestDate == 0) {
                 earliestDate = date;
-            } else if (date > latestDate) {
+            }
+            if (date > latestDate) {
                 latestDate = date;
             }
         }
 
-        new AsyncGetEmails(Integer.toString(earliestDate), Integer.toString(latestDate)).execute(Integer.toString(fetchNum), "true");
+        new AsyncGetEmails(Integer.toString(latestDate), Integer.toString(earliestDate)).execute(Integer.toString(fetchNum), "true");
     }
 
     /** Helper method to convert a generic date to Epoch time
@@ -181,6 +182,7 @@ public class EmailController {
                 listResponse = mService.users().messages().list("me").setLabelIds(labels).setMaxResults(new Long(num)).execute();
             } else { // Get a more specific set of emails using the input dates
                 startDate = Integer.toString(Integer.parseInt(startDate) + 1); // Add 1 second because 'after:' is inclusive
+                endDate = Integer.toString(Integer.parseInt(startDate) + 1); // Subtract 1 second from endDate as well...
                 String query = "before:" + endDate + " || after:" + startDate;
                 listResponse = mService.users().messages().list("me").setLabelIds(labels).setMaxResults(new Long(num))
                         .setQ(query).execute();
@@ -267,12 +269,22 @@ public class EmailController {
                     senderName = "";
                 }
 
-                List<String> messageParts = new ArrayList<String>();
-                messageParts = lookForMessage(messageParts, curMessage.getPayload().getParts());
-
                 String messageBody = "";
-                for (int y=0; y<messageParts.size(); y++) {
-                    messageBody += messageParts.get(y);
+
+                if (curMessage.getPayload().getMimeType().equals("text/plain")) {
+                    String message = StringUtils.newStringUtf8(Base64.decodeBase64(curMessage.getPayload().getBody().getData().trim().toString()));
+                    messageBody = message.replaceAll("(\r\n|\n\r|\n|\r)", "");
+                } else {
+                    try {
+                        List<String> messageParts = new ArrayList<String>();
+                        messageParts = lookForMessage(messageParts, curMessage.getPayload().getParts());
+
+                        for (int y=0; y<messageParts.size(); y++) {
+                            messageBody += messageParts.get(y) + " ";
+                        }
+                    } catch (Exception e) {
+
+                    }
                 }
                 
                 if (messageBody.equals("")) {
@@ -281,11 +293,6 @@ public class EmailController {
                         messageBody = "There is no message body";
                     }
                 }
-
-                /** TODO Get the email body depending on what type of email it is... **/
-
-                //String messageBody = StringUtils.newStringUtf8(Base64.decodeBase64(curMessage.getPayload().getParts().get(0).getBody().getData().trim().toString())); //TODO
-                //messageBody = messageBody.replaceAll("(\r\n|\n\r|\n|\r)", "");
 
                 /** After all the email info we want is retrieved, create a new
                  * @Email object and add it to emailList **/
