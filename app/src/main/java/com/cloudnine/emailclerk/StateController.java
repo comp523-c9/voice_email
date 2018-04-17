@@ -85,7 +85,7 @@ public class StateController
         emails = new ArrayList<Email>();
 
         emailController = new EmailController(this, service);
-        voiceController = new VoiceController(context, activity, this, listingState);
+        voiceController = new VoiceController(context, activity, this);
         //settings = new SettingsController();
 
         emailController.getNewEmails(INITIAL_FETCH_NUMBER);
@@ -106,10 +106,10 @@ public class StateController
     private void readNextEmail()
     {
         counter++;
-        if (counter == emails.size()) {
-            voiceController.textToSpeech("You are out of emails. Please restart the app");
-            return;
-        } else if (counter == emails.size() - 5) {
+//        if (counter == emails.size()) {
+//            voiceController.textToSpeech("You are out of emails. Please restart the app");
+//            return;
+        if (counter == emails.size() - 5) {
             emailController.fetchNewEmails(emails, SUBSEQUENT_FETCH_NUMBER);
             fetchNumber++;
         } else {
@@ -122,7 +122,7 @@ public class StateController
 
             if(sent)
             {
-                VoiceController.textToSpeech(output, true);
+                VoiceController.textToSpeechQueue(output);
                 sent = false;
             }
             else

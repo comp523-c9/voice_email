@@ -63,6 +63,7 @@ public class MainActivity extends AppCompatActivity {
     static final int RESULT_OKAY = 2;
     public static TextView returnedText;
     public static AudioManager amanager;
+    private int volume;
     public StateController stateController;
 
     public static final String PREFS_NAME = "MyPrefsFile";
@@ -73,6 +74,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         returnedText = (TextView) findViewById(R.id.texttest);
         amanager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+        volume = MainActivity.amanager.getStreamVolume(AudioManager.STREAM_MUSIC); // getting system volume into var for later un-muting
 //        amanager.setStreamVolume(AudioManager.STREAM_NOTIFICATION, AudioManager.ADJUST_MUTE, 0);
 //        amanager.setStreamVolume(AudioManager.STREAM_ALARM, AudioManager.ADJUST_MUTE, 0);
         amanager.setStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE, 0);
@@ -152,6 +154,7 @@ public class MainActivity extends AppCompatActivity {
         if(stateController!=null){
             stateController.onDestroy();
         }
+        MainActivity.amanager.setStreamVolume(AudioManager.STREAM_MUSIC, volume , 0);
         super.onDestroy();
     }
 //    @Override
