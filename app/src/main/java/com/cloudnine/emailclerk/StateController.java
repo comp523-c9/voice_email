@@ -109,7 +109,7 @@ public class StateController
 //        if (counter == emails.size()) {
 //            voiceController.textToSpeech("You are out of emails. Please restart the app");
 //            return;
-        if (counter == emails.size() - 5) {
+        if (counter >= emails.size() - 5) {
             emailController.fetchNewEmails(emails, SUBSEQUENT_FETCH_NUMBER);
             fetchNumber++;
         } else {
@@ -148,11 +148,12 @@ public class StateController
      */
     public void onCommandRead()
     {
-        VoiceController.textToSpeech(emails.get(counter).getMessage() + " Would you like to reply, skip or delete?");
-        String[] possibleInputs = new String[3];
+        VoiceController.textToSpeech(emails.get(counter).getMessage() + " Would you like to reply, repeat, skip or delete?");
+        String[] possibleInputs = new String[4];
         possibleInputs[0] = "SKIP";
         possibleInputs[1] = "DELETE";
         possibleInputs[2] = "REPLY";
+        possibleInputs[3] = "REPEAT";
         voiceController.startListening(possibleInputs);
     }
 
@@ -161,6 +162,10 @@ public class StateController
      */
     public void onCommandSkip() { readNextEmail(); }
 
+    public void onCommandRepeat() {
+        counter--;
+        readNextEmail();
+    }
     /**
      * Compose a new email as a reply to the current one
      */
