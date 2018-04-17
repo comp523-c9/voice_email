@@ -1,5 +1,10 @@
 package com.cloudnine.emailclerk;
 
+/**
+ * Created by alecs on 4/4/2018.
+ * @author Alec Schleicher
+ */
+
 public class Email {
 
     private String id;
@@ -12,7 +17,7 @@ public class Email {
     private String message;
     private String date;
 
-    // Constructor
+    /** Constructor **/
     Email(String id, String threadId, String receiverAddress, String receiverName,
           String senderAddress, String senderName, String subject, String message, String date)
     {
@@ -27,7 +32,7 @@ public class Email {
         this.date = date;
     }
 
-    // Getters
+    /** Getters **/
     public String getID() {
         return id;
     }
