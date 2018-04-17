@@ -23,6 +23,8 @@ public class StateController
     //private SettingsController settings;
     private VoiceController voiceController;
     private EmailController emailController;
+    private static int INITIAL_FETCH_NUMBER = 5;
+    private static int SUBSEQUENT_FETCH_NUMBER = 10;
 
     //private String userEmail;
     //private String userName;
@@ -86,7 +88,7 @@ public class StateController
         voiceController = new VoiceController(context, activity, this, listingState);
         //settings = new SettingsController();
 
-        emailController.getNewEmails(50);
+        emailController.getNewEmails(INITIAL_FETCH_NUMBER);
     }
 
     /**
@@ -113,7 +115,7 @@ public class StateController
             voiceController.textToSpeech("You are out of emails. Please restart the app");
             return;
         } else if (counter == emails.size() - 5) {
-            emailController.fetchNewEmails(emails.get(fetchNumber * 10), emails.get(emails.size() - 1));
+            emailController.fetchNewEmails(emails, SUBSEQUENT_FETCH_NUMBER);
             fetchNumber++;
         } else {
             Email curEmail = emails.get(counter);

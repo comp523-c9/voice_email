@@ -1,26 +1,9 @@
 package com.cloudnine.emailclerk;
 
 import android.os.AsyncTask;
-
-import javax.mail.BodyPart;
-import javax.mail.MessagingException;
-import javax.mail.Multipart;
-import javax.mail.SendFailedException;
 import javax.mail.Session;
-import javax.mail.Transport;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeBodyPart;
-import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimeMultipart;
-import javax.activation.DataHandler;
-import javax.activation.DataSource;
-import javax.mail.Message;
-import javax.mail.PasswordAuthentication;
-import javax.mail.Session;
-import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
-
 
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -45,22 +28,28 @@ import java.io.ByteArrayOutputStream;
 public class EmailController {
 
     private com.google.api.services.gmail.Gmail mService;
-    public List<Email> emails;
-    volatile boolean finished = false;
-    StateController stateController; // Reference to StateController
+    StateController stateController;
 
+    /** Constructor takes a reference to post
+     * @StateController and the Gmail service object to use in API calls
+     * **/
     EmailController(StateController stateController, com.google.api.services.gmail.Gmail mService) {
         this.stateController = stateController;
         this.mService = mService;
     }
 
+    /** Gets first batch of emails (Gets 'num' emails
+     * This is used for the first batch of emails only
+     * Later batches are fetched with fetchNewEmails
+     * **/
     public void getNewEmails(int num) {
         String[] params = new String[2];
         params[0] = Integer.toString(num);
-        params[1] = "false";
+        params[1] = "false"; // False flag used in AsyncGetEmails - false means it's not a new batch
         new AsyncGetEmails().execute(params);
     }
 
+    /** Moves the email with the specified threadID into the trash folder **/
     public void deleteEmail(String threadId) {
         String[] params = new String[1];
         params[0] = threadId;
@@ -98,44 +87,69 @@ public class EmailController {
         new AsyncReplyToEmail().execute(params);
     }
 
-    public void fetchNewEmails(Email startEmail, Email endEmail) {
-        String startDate = convertDate(startEmail.getDate());
-        String endDate = convertDate(endEmail.getDate());
-        new AsyncGetEmails(startDate, endDate).execute("50", "true");
+    public void fetchNewEmails(List<Email> emails, int fetchNum) {
+        int earliestDate = 0;
+        int latestDate = 0;
+        for (Email email: emails) {
+            int date =Integer.parseInt(convertDate(email.getDate()));
+            if (date < earliestDate || earliestDate == 0) {
+                earliestDate = date;
+            } else if (date > latestDate) {
+                latestDate = date;
+            }
+        }
+
+        new AsyncGetEmails(Integer.toString(earliestDate), Integer.toString(latestDate)).execute(Integer.toString(fetchNum), "true");
     }
 
-    /**
-     * @param inputDate
-     * @return convertDate in Epoch time for use in fetchNewEmails()
+    /** Helper method to convert a generic date to Epoch time
+     * Epoch time is used in a query when fetching emails in fetchNewEmails()
      **/
     private String convertDate(String inputDate) {
         String convertedDate = "";
         SimpleDateFormat df = new SimpleDateFormat("dd MMM yyyy HH:mm:ss");
-
         try {
-            Date date = df.parse(inputDate.substring(5, 26));
+            Date date = df.parse(inputDate.substring(5, 26)); // Specific substring with all the info we need...
             convertedDate = Long.toString(date.getTime());
-        } catch(Exception e) {
-            Exception b = e;
-        }
-        return convertedDate.substring(0, convertedDate.length() - 3); // Chop off the last 3 digits to convert to seconds
+        } catch(Exception e) { }
+
+        convertedDate = convertedDate.substring(0, convertedDate.length() - 3); // Convert milliseconds to seconds
+        return convertedDate;
     }
 
+    /** Above are the simplified methods that StateController calls
+     * ===========================================================================================================================
+     * ===========================================================================================================================
+     * ===========================================================================================================================
+     *  Below are the ASYNCHRONOUS tasks that the above methods use. Most of the more specific work is done here
+     * **/
+
+
+    /** AsyncGetEmails is called by
+     * @getNewEmails() and
+     * @fetchNewEmails()
+     * **/
     private class AsyncGetEmails extends AsyncTask<String, Void, List<Email>> {
 
         Exception mLastError;
         String startDate;
         String endDate;
 
+        /** Default constructor that doesn't need email dates, used by
+         * @getNewEmails() **/
         AsyncGetEmails() {
             mLastError = null;
         }
+
+        /** Overloaded constructor that takes in dates. This constructor is used by
+         * @fetchNewEmails() **/
         AsyncGetEmails(String startDate, String endDate) {
             mLastError = null;
             this.startDate = startDate;
             this.endDate = endDate;
         }
 
+        /** The only actual asynchronous part of the AsyncTask **/
         @Override
         protected List<Email> doInBackground(String... params) {
 
@@ -153,36 +167,37 @@ public class EmailController {
             // Create list to store email objects...
             List<Email> emailList = new ArrayList<Email>();
 
-            // Initialize batch object
+            // Initialize batch object (for batch API request)
             BatchRequest batch = mService.batch();
 
             List<String> labels = new ArrayList<String>();
             labels.add("INBOX");
             ListMessagesResponse listResponse;
 
-            if (getNewBatch.equals("false")) {
+
+            if (getNewBatch.equals("false")) { // If not first batch...
                 listResponse = mService.users().messages().list("me").setLabelIds(labels).setMaxResults(new Long(num)).execute();
-            } else {
+            } else { // Get a more specific set of emails using the input dates
                 startDate = Integer.toString(Integer.parseInt(startDate) + 1); // Add 1 second because 'after:' is inclusive
                 String query = "before:" + endDate + " || after:" + startDate;
                 listResponse = mService.users().messages().list("me").setLabelIds(labels).setMaxResults(new Long(num))
                         .setQ(query).execute();
             }
 
-            final List<com.google.api.services.gmail.model.Message> messages = new ArrayList<com.google.api.services.gmail.model.Message>();
+            final List<com.google.api.services.gmail.model.Message> messages = new ArrayList<Message>();
 
+            /** This is the callback for the batch request.
+             * After the request is completed, either onSuccess() or onFailure() is called
+             * **/
             JsonBatchCallback<com.google.api.services.gmail.model.Message> callback = new JsonBatchCallback<com.google.api.services.gmail.model.Message>() {
                 public void onSuccess(com.google.api.services.gmail.model.Message message, HttpHeaders responseHeaders) {
-                    System.out.println("MessageThreadID:" + message.getThreadId());
-                    System.out.println("MessageID:" + message.getId());
                     synchronized (messages) {
                         messages.add(message);
                     }
                 }
 
                 @Override
-                public void onFailure(GoogleJsonError e, HttpHeaders responseHeaders) throws IOException {
-                }
+                public void onFailure(GoogleJsonError e, HttpHeaders responseHeaders) { }
             };
 
             // Loop through the messages to get necessary info
@@ -191,17 +206,26 @@ public class EmailController {
                 mService.users().messages().get("me", id).setFormat("full").queue(batch, callback);
             }
 
+            /** Execute the batch request **/
             batch.execute();
 
+            /** Loop through raw emails in messages and pick out info we want... **/
             for (int i=0; i<messages.size(); i++) {
                 com.google.api.services.gmail.model.Message curMessage = messages.get(i);
+
+                /** Get Id and threadId **/
                 String id = curMessage.getId();
                 String threadId = curMessage.getThreadId();
+
+                /** Get receiver and sender address (and optionally their names as well)
+                 *  Get the email subject
+                 *  Get the date the email was received
+                 *  Info is retrieved by looking for specific headers in the email
+                 * **/
                 String receiver = "";
                 String sender = "";
                 String subject = "";
                 String date = "";
-
 
                 List<MessagePartHeader> headers = curMessage.getPayload().getHeaders();
                 for(MessagePartHeader header:headers){
@@ -224,6 +248,8 @@ public class EmailController {
                 String senderAddress;
                 String senderName;
 
+                /** Receiver and Sender is of the form:
+                 * John Smith <johnsmith@example.com> **/
                 if (receiver.indexOf("<") > 0) {
                     receiverAddress = receiver.substring((receiver.indexOf("<")+1), receiver.indexOf(">"));
                     receiverName = receiver.substring(0, receiver.indexOf("<")-1);
@@ -239,24 +265,74 @@ public class EmailController {
                     senderName = "";
                 }
 
-                //String messageBody = curMessage.getSnippet();
-//                String messageBody = StringUtils.newStringUtf8(Base64.decodeBase64(curMessage.getPayload().getParts().get(0).getBody().getData().trim().toString())); //TODO
-//                messageBody = messageBody.replaceAll("(\r\n|\n\r|\n|\r)", "");
-                String messageBody = "There is no message body";
-                if (!curMessage.getPayload().getMimeType().equals("text/html")) {
-                    try {
-                        messageBody = StringUtils.newStringUtf8(Base64.decodeBase64(curMessage.getPayload().getParts().get(0).getBody().getData().trim().toString())); //TODO
-                        messageBody = messageBody.replaceAll("(\r\n|\n\r|\n|\r)", "");
-                    } catch(Exception e) {
+                List<String> messageParts = new ArrayList<String>();
+                messageParts = lookForMessage(messageParts, curMessage.getPayload().getParts());
 
+                String messageBody = "";
+                for (int y=0; y<messageParts.size(); y++) {
+                    messageBody += messageParts.get(y);
+                }
+                
+                if (messageBody.equals("")) {
+                    messageBody = curMessage.getSnippet();
+                    if (messageBody.equals("")) {
+                        messageBody = "There is no message body";
                     }
                 }
 
+                /** TODO Get the email body depending on what type of email it is... **/
 
+                //String messageBody = StringUtils.newStringUtf8(Base64.decodeBase64(curMessage.getPayload().getParts().get(0).getBody().getData().trim().toString())); //TODO
+                //messageBody = messageBody.replaceAll("(\r\n|\n\r|\n|\r)", "");
 
+                /** After all the email info we want is retrieved, create a new
+                 * @Email object and add it to emailList **/
                 emailList.add(new Email(id, threadId, receiverAddress, receiverName, senderAddress, senderName, subject, messageBody, date));
             }
+
+            /** After all the emails are looped through, move on to
+             * @onPostExecute() **/
             return emailList;
+        }
+
+        private List<String> lookForMessage(List<String> messageParts, List<MessagePart> parts) {
+
+            String messageBody = "";
+
+            for (int x=0; x<parts.size(); x++) {
+
+                String name = parts.get(x).getMimeType();
+
+                /** Look for attachments and add them to the message if they exist **/
+                if (parts.get(x).getMimeType().contains("application")) {
+                    try {
+                        messageParts.add("The email contains one file with the name " + parts.get(x).getFilename());
+                    } catch (Exception e){}
+                }
+
+                /** Look for images and add them to the message if they exist **/
+                if (parts.get(x).getMimeType().contains("image")) {
+                    try {
+                        messageParts.add("The email contains an image with the name " + parts.get(x).getFilename());
+                    } catch (Exception e){}
+                }
+
+                /** Look for basic text and add it to the message if it exists **/
+                if (parts.get(x).getMimeType().contains("text/plain")) {
+                    try {
+                        String message = StringUtils.newStringUtf8(Base64.decodeBase64(parts.get(x).getBody().getData().trim().toString()));
+                        message = message.replaceAll("(\r\n|\n\r|\n|\r)", "");
+                        messageParts.add(message);
+                    } catch (Exception e){}
+                }
+
+                /** If message contains a multipart, recursively call this method again to dig further for messages **/
+                if (parts.get(x).getMimeType().contains(("multipart"))) {
+                    lookForMessage(messageParts, parts.get(x).getParts());
+                }
+            }
+
+            return messageParts;
         }
 
         @Override
@@ -268,6 +344,9 @@ public class EmailController {
         }
     }
 
+    /** AsyncReplyToEmail is called by
+     * @sendEmail() with a specific constructor
+     * **/
     private class AsyncReplyToEmail extends AsyncTask<String, Void, Void> {
 
         Exception mLastError;
@@ -327,6 +406,9 @@ public class EmailController {
         }
     }
 
+    /** AsyncReplyToEmail is called by
+     * @sendEmail() with a specific constructor
+     * **/
     private class AsyncComposeEmail extends AsyncTask<String, Void, Void> {
 
         Exception mLastError;
@@ -379,6 +461,9 @@ public class EmailController {
         }
     }
 
+    /** AsyncDeleteEmail is called by
+     * @deleteEmail()
+     * **/
     private class AsyncDeleteEmail extends AsyncTask<String, Void, Void> {
 
         Exception mLastError;
