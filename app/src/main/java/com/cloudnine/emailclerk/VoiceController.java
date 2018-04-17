@@ -29,7 +29,10 @@ import android.widget.Toast;
 import android.widget.ToggleButton;
 import android.speech.tts.TextToSpeech;
 
+import org.w3c.dom.Text;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Locale;
 
 public class VoiceController implements
@@ -52,6 +55,7 @@ public class VoiceController implements
     private int iterator = 0;
     public boolean go;
     private int volume;
+    public static float speed;
 //    private float[] micLevels;
 //    private int counter = 0;
 
@@ -66,10 +70,12 @@ public class VoiceController implements
         this.activity = activity;
         this.stateController = stateController;
         this.commandList = commandList;
+        this.speed = 0.8f;
 //        micLevels = new float[5];
 //        for(int i=0;i<5;i++){
 //            micLevels[i] =0;
 //        }
+
 
         speech = SpeechRecognizer.createSpeechRecognizer(context);
         Log.i(LOG_TAG, "isRecognitionAvailable: " + SpeechRecognizer.isRecognitionAvailable(context));
@@ -110,24 +116,29 @@ public class VoiceController implements
 
     public static void textToSpeech(String input) {
         final String inputs = input;
+        final HashMap<String, String> params = new HashMap();
+        params.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(AudioManager.STREAM_ALARM));
         if(tts == null) {
             // Instantiate TTS Object
+
             tts = new TextToSpeech(context, new TextToSpeech.OnInitListener() {
                 @Override
                 public void onInit(int i) {
                     tts.setLanguage(Locale.US);
-                    tts.setSpeechRate((float)0.8);
-                    tts.speak(inputs, TextToSpeech.QUEUE_FLUSH, null);
+                    tts.setSpeechRate(speed);
+                    tts.speak(inputs, TextToSpeech.QUEUE_FLUSH, params);
                 }
             });
         }
         else{
-            tts.speak(input, TextToSpeech.QUEUE_FLUSH, null);
+            tts.speak(input, TextToSpeech.QUEUE_FLUSH, params);
 
         }
     }
     public static void textToSpeech(String input, boolean bool){
         final String inputs = input;
+        final HashMap<String, String> params = new HashMap();
+        params.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(AudioManager.STREAM_ALARM));
         if(tts == null) {
             // Instantiate TTS Object
             tts = new TextToSpeech(context, new TextToSpeech.OnInitListener() {
@@ -135,12 +146,12 @@ public class VoiceController implements
                 public void onInit(int i) {
                     tts.setLanguage(Locale.US);
                     tts.setSpeechRate((float)0.8);
-                    tts.speak(inputs, TextToSpeech.QUEUE_ADD, null);
+                    tts.speak(inputs, TextToSpeech.QUEUE_ADD, params);
                 }
             });
         }
         else{
-            tts.speak(input, TextToSpeech.QUEUE_ADD, null);
+            tts.speak(input, TextToSpeech.QUEUE_ADD, params);
 
         }
     }
@@ -175,7 +186,7 @@ public class VoiceController implements
         speech.cancel();
         speech.destroy();
     }
-//    public float getSensitivity(){
+    //    public float getSensitivity(){
 //        float micLevel = 0;
 //        for(int i=0;i<5;i++){
 //            micLevel += micLevels[i];
@@ -249,7 +260,7 @@ public class VoiceController implements
                     } else if (validCommands[i].toUpperCase().contains("SEND")) {
                         stateController.onCommandSend();
                         break;
-                    } else if (validCommands[i].toUpperCase().contains("ADD")) {
+                    } else if (validCommands[i].toUpperCase().contains("CONTINUE")) {
                         stateController.onCommandContinue();
                         break;
                     }

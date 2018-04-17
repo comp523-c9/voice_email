@@ -79,7 +79,7 @@ public class StateController
     {
         this.master = mainActivity;
         //this.mService = service; TODO remove maybe
-        this.counter = 0;
+        this.counter = -1;
         messageBody = "";
         fetchNumber = 0;
         emails = new ArrayList<Email>();
@@ -97,12 +97,7 @@ public class StateController
      */
     public void onEmailsRetrieved()
     {
-        Email curEmail = emails.get(0);
-        String output = "New email from " + curEmail.getSenderName() + " with the subject " + curEmail.getSubject() + ". Would you like to read, skip or delete?";
-        VoiceController.textToSpeech(output);
-        voiceController.startListening(listingState);
-        //this.userEmail = emails.get(0).getReceiverAddress();
-        //this.userName = emails.get(0).getSenderName();
+        readNextEmail();
     }
 
     /**
@@ -238,42 +233,42 @@ public class StateController
     }
 }
 
-class EmailIterator<T extends Email> implements Iterator<T>
-{
-    private T[] storedEmails;
-    private EmailController controller;
-    private int pointer;
-
-    private final int MARGIN = 10;
-    private final int BUFFER = 50;
-
-    public EmailIterator(EmailController controller)
-    {
-        this.storedEmails = (T[]) new Object[BUFFER];
-        this.controller = controller;
-        this.pointer = 0;
-    }
-
-    public boolean hasNext()
-    {
-        return pointer < BUFFER - 1;
-    }
-
-    public T next()
-    {
-        if(!hasNext())
-        {
-            throw new NoSuchElementException();
-        }
-        else
-        {
-            if(BUFFER - pointer < MARGIN)
-            {
-                controller.getNewEmails(10);
-            }
-
-            pointer++;
-            return storedEmails[pointer];
-        }
-    }
-}
+//class EmailIterator<T extends Email> implements Iterator<T>
+//{
+//    private T[] storedEmails;
+//    private EmailController controller;
+//    private int pointer;
+//
+//    private final int MARGIN = 10;
+//    private final int BUFFER = 50;
+//
+//    public EmailIterator(EmailController controller)
+//    {
+//        this.storedEmails = (T[]) new Object[BUFFER];
+//        this.controller = controller;
+//        this.pointer = 0;
+//    }
+//
+//    public boolean hasNext()
+//    {
+//        return pointer < BUFFER - 1;
+//    }
+//
+//    public T next()
+//    {
+//        if(!hasNext())
+//        {
+//            throw new NoSuchElementException();
+//        }
+//        else
+//        {
+//            if(BUFFER - pointer < MARGIN)
+//            {
+//                controller.getNewEmails(10);
+//            }
+//
+//            pointer++;
+//            return storedEmails[pointer];
+//        }
+//    }
+//}
