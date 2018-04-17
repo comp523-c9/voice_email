@@ -23,8 +23,8 @@ public class StateController
     //private SettingsController settings;
     private VoiceController voiceController;
     private EmailController emailController;
-    private static int INITIAL_FETCH_NUMBER = 6;
-    private static int SUBSEQUENT_FETCH_NUMBER = 10;
+    public static int INITIAL_FETCH_NUMBER = 6;
+    public static int SUBSEQUENT_FETCH_NUMBER = 10;
 
     //private String userEmail;
     //private String userName;
