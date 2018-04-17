@@ -109,13 +109,15 @@ public class StateController
     private void readNextEmail()
     {
         counter++;
-        if (counter == emails.size()) {
-            voiceController.textToSpeech("You are out of emails. Please restart the app");
-            return;
-        } else if (counter == emails.size() - 5) {
+        if (counter == emails.size())
+        {
+            VoiceController.textToSpeech("You are out of emails. Please restart the app");
+        } else if (counter == emails.size() - 5)
+        {
             emailController.fetchNewEmails(emails.get(fetchNumber * 10), emails.get(emails.size() - 1));
             fetchNumber++;
-        } else {
+        } else
+        {
             Email curEmail = emails.get(counter);
             String output = "New email from " + curEmail.getSenderName() + " with the subject " + curEmail.getSubject() + ". Would you like to read, skip or delete?";
             String[] possibleInputs = new String[3];
@@ -233,45 +235,5 @@ public class StateController
     {
         VoiceController.textToSpeech("");
         voiceController.stopListening();
-    }
-}
-
-class EmailIterator<T extends Email> implements Iterator<T>
-{
-    private T[] storedEmails;
-    private EmailController controller;
-    private int pointer;
-
-    private final int MARGIN = 10;
-    private final int BUFFER = 50;
-
-    public EmailIterator(EmailController controller)
-    {
-        this.storedEmails = (T[]) new Object[BUFFER];
-        this.controller = controller;
-        this.pointer = 0;
-    }
-
-    public boolean hasNext()
-    {
-        return pointer < BUFFER - 1;
-    }
-
-    public T next()
-    {
-        if(!hasNext())
-        {
-            throw new NoSuchElementException();
-        }
-        else
-        {
-            if(BUFFER - pointer < MARGIN)
-            {
-                controller.getNewEmails(10);
-            }
-
-            pointer++;
-            return storedEmails[pointer];
-        }
     }
 }
