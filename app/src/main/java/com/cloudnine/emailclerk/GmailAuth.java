@@ -43,6 +43,7 @@ import pub.devrel.easypermissions.EasyPermissions;
 
 /**
  * Created by alecs on 4/1/2018.
+ * @author Alec Schleicher
  */
 
 public class GmailAuth extends Activity implements EasyPermissions.PermissionCallbacks, Serializable{

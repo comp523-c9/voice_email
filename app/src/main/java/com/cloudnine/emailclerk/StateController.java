@@ -23,6 +23,8 @@ public class StateController
     //private SettingsController settings;
     private VoiceController voiceController;
     private EmailController emailController;
+    private static int INITIAL_FETCH_NUMBER = 6;
+    private static int SUBSEQUENT_FETCH_NUMBER = 10;
 
     //private String userEmail;
     //private String userName;
@@ -77,16 +79,16 @@ public class StateController
     {
         this.master = mainActivity;
         //this.mService = service; TODO remove maybe
-        this.counter = 0;
+        this.counter = -1;
         messageBody = "";
         fetchNumber = 0;
         emails = new ArrayList<Email>();
 
         emailController = new EmailController(this, service);
-        voiceController = new VoiceController(context, activity, this, listingState);
+        voiceController = new VoiceController(context, activity, this);
         //settings = new SettingsController();
 
-        emailController.getNewEmails(50);
+        emailController.getNewEmails(INITIAL_FETCH_NUMBER);
     }
 
     /**
@@ -95,12 +97,7 @@ public class StateController
      */
     public void onEmailsRetrieved()
     {
-        Email curEmail = emails.get(0);
-        String output = "New email from " + curEmail.getSenderName() + " with the subject " + curEmail.getSubject() + ". Would you like to read, skip or delete?";
-        VoiceController.textToSpeech(output);
-        voiceController.startListening(listingState);
-        //this.userEmail = emails.get(0).getReceiverAddress();
-        //this.userName = emails.get(0).getSenderName();
+        readNextEmail();
     }
 
     /**
@@ -115,6 +112,11 @@ public class StateController
         } else if (counter == emails.size() - 5)
         {
             emailController.fetchNewEmails(emails.get(fetchNumber * 10), emails.get(emails.size() - 1));
+//        if (counter == emails.size()) {
+//            voiceController.textToSpeech("You are out of emails. Please restart the app");
+//            return;
+        if (counter == emails.size() - 5) {
+            emailController.fetchNewEmails(emails, SUBSEQUENT_FETCH_NUMBER);
             fetchNumber++;
         } else
         {
@@ -127,7 +129,7 @@ public class StateController
 
             if(sent)
             {
-                VoiceController.textToSpeech(output, true);
+                VoiceController.textToSpeechQueue(output);
                 sent = false;
             }
             else

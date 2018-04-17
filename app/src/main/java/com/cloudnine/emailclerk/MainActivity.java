@@ -55,6 +55,7 @@ import java.util.Set;
 
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
+import android.view.View.OnClickListener;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -62,17 +63,21 @@ public class MainActivity extends AppCompatActivity {
     static final int RESULT_OKAY = 2;
     public static TextView returnedText;
     public static AudioManager amanager;
+    private int volume;
     public StateController stateController;
+
+    public static final String PREFS_NAME = "MyPrefsFile";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        returnedText = (TextView) findViewById(R.id.text);
+        returnedText = (TextView) findViewById(R.id.texttest);
         amanager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+        volume = MainActivity.amanager.getStreamVolume(AudioManager.STREAM_MUSIC); // getting system volume into var for later un-muting
 //        amanager.setStreamVolume(AudioManager.STREAM_NOTIFICATION, AudioManager.ADJUST_MUTE, 0);
 //        amanager.setStreamVolume(AudioManager.STREAM_ALARM, AudioManager.ADJUST_MUTE, 0);
-//        amanager.setStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE, 0);
+        amanager.setStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE, 0);
 //        amanager.setStreamVolume(AudioManager.STREAM_RING, AudioManager.ADJUST_MUTE, 0);
 //        amanager.setStreamVolume(AudioManager.STREAM_SYSTEM, AudioManager.ADJUST_MUTE, 0);
 //        amanager.setStreamVolume(AudioManager.STREAM_NOTIFICATION, AudioManager.ADJUST_UNMUTE, 0);
@@ -87,6 +92,20 @@ public class MainActivity extends AppCompatActivity {
         getSupportActionBar().setTitle("Email Clerk");
         final TextView text1 = (TextView) findViewById(R.id.texttest);
         Button btn1 = (Button) findViewById(R.id.buttontest);
+        btn1.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                stateController.onCommandSkip();
+            }
+        });
+        /*btn1.setOnClickListener(new View.OnClickListener() {
+        /    public void onClick (View view){
+
+                SharedPreferences settings = getSharedPreferences(MainActivity.PREFS_NAME,0);
+                int data =settings.getInt("speed",10);
+                text1.setText(String.valueOf(data));
+            }
+        });
+        */
 
 
         // Start Gmail Authentication Activity
@@ -135,6 +154,7 @@ public class MainActivity extends AppCompatActivity {
         if(stateController!=null){
             stateController.onDestroy();
         }
+        MainActivity.amanager.setStreamVolume(AudioManager.STREAM_MUSIC, volume , 0);
         super.onDestroy();
     }
 //    @Override
