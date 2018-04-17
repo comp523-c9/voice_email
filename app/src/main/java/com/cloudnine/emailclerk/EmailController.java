@@ -107,14 +107,15 @@ public class EmailController {
      **/
     private String convertDate(String inputDate) {
         String convertedDate = "";
-        SimpleDateFormat df = new SimpleDateFormat("dd MMM yyyy HH:mm:ss");
-        try {
-            Date date = df.parse(inputDate.substring(5, 26)); // Specific substring with all the info we need...
-            convertedDate = Long.toString(date.getTime());
-        } catch(Exception e) { }
+        SimpleDateFormat df = new SimpleDateFormat("dd MMM yyyy HH:mm:ss ZZZZZ");
 
-        convertedDate = convertedDate.substring(0, convertedDate.length() - 3); // Convert milliseconds to seconds
-        return convertedDate;
+        try {
+            Date date = df.parse(inputDate.substring(5));
+            convertedDate = Long.toString(date.getTime());
+        } catch(Exception e) {
+            Exception b = e;
+        }
+        return convertedDate.substring(0, convertedDate.length() - 3); // Chop off the last 3 digits to convert to seconds
     }
 
     /** Above are the simplified methods that StateController calls
