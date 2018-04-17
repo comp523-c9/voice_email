@@ -73,10 +73,9 @@ public class VoiceController implements
     public static void textToSpeech(String input) {
         final String inputs = input;
         final HashMap<String, String> params = new HashMap();
-        params.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(AudioManager.STREAM_ALARM));
+        params.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(AudioManager.STREAM_VOICE_CALL));
         if(tts == null) {
             // Instantiate TTS Object
-
             tts = new TextToSpeech(context, new TextToSpeech.OnInitListener() {
                 @Override
                 public void onInit(int i) {
@@ -94,7 +93,7 @@ public class VoiceController implements
     public static void textToSpeechQueue(String input){
         final String inputs = input;
         final HashMap<String, String> params = new HashMap();
-        params.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(AudioManager.STREAM_ALARM));
+        params.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(AudioManager.STREAM_VOICE_CALL));
         if(tts == null) {
             // Instantiate TTS Object
             tts = new TextToSpeech(context, new TextToSpeech.OnInitListener() {
@@ -178,7 +177,7 @@ public class VoiceController implements
 
         for (String result : matches) {
             text += result + "\n";
-            singlePartialResult = text;
+            singlePartialResult = result;
 
             MainActivity.returnedText.setText(singlePartialResult);
 
