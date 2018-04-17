@@ -103,6 +103,7 @@ public class StateController
     private void readNextEmail()
     {
         counter++;
+        readingState = false;
 //        if (counter == emails.size()) {
 //            voiceController.textToSpeech("You are out of emails. Please restart the app");
 //            return;
