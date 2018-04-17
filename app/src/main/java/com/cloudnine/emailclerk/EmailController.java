@@ -23,6 +23,7 @@ import java.io.ByteArrayOutputStream;
 
 /**
  * Created by alecs on 4/4/2018.
+ * @author Alec Schleicher
  */
 
 public class EmailController {
