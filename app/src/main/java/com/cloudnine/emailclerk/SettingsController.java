@@ -26,13 +26,7 @@ public class SettingsController extends AppCompatActivity {
 
 
 
-    public static int getTTSSpeed (){
-        return tts_progress_value;
-    }
 
-    public static boolean getSkipRead(){
-        return skip_read;
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,12 +59,16 @@ public class SettingsController extends AppCompatActivity {
                     @Override
                     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                         tts_progress_value = progress;
+                        float flt_prog = (float)progress;
                         SharedPreferences settings = getSharedPreferences(MainActivity.PREFS_NAME,0);
                         SharedPreferences.Editor editor = settings.edit();
                         editor.putInt("speed",tts_progress_value);
+                        editor.putFloat("speedflt",flt_prog);
                         editor.commit();
 
                         tts_speedtext.setText(String.valueOf(progress * 10) + "%");
+                        VoiceController.speed=flt_prog;
+
                     }
 
                     @Override

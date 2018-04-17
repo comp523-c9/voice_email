@@ -8,6 +8,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.speech.RecognitionListener;
@@ -43,6 +44,7 @@ public class VoiceController implements
 
 //    private int count = 1;
 
+
     public VoiceController(Context context, Activity activity, StateController stateController)
 
     {
@@ -73,6 +75,7 @@ public class VoiceController implements
     public static void textToSpeech(String input) {
         final String inputs = input;
         final HashMap<String, String> params = new HashMap();
+
         params.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(AudioManager.STREAM_VOICE_CALL));
         if(tts == null) {
             // Instantiate TTS Object
@@ -80,12 +83,17 @@ public class VoiceController implements
                 @Override
                 public void onInit(int i) {
                     tts.setLanguage(Locale.US);
-                    tts.setSpeechRate(speed);
+                    SharedPreferences settings = context.getSharedPreferences(MainActivity.PREFS_NAME,0);
+                    float data =settings.getFloat("speedflt",10);
+                    tts.setSpeechRate(data/10);
                     tts.speak(inputs, TextToSpeech.QUEUE_FLUSH, params);
                 }
             });
         }
         else{
+            SharedPreferences settings = context.getSharedPreferences(MainActivity.PREFS_NAME,0);
+            float data =settings.getFloat("speedflt",10);
+            tts.setSpeechRate(data/10);
             tts.speak(input, TextToSpeech.QUEUE_FLUSH, params);
 
         }
@@ -100,7 +108,6 @@ public class VoiceController implements
                 @Override
                 public void onInit(int i) {
                     tts.setLanguage(Locale.US);
-                    tts.setSpeechRate((float)0.8);
                     tts.speak(inputs, TextToSpeech.QUEUE_ADD, params);
                 }
             });
@@ -211,7 +218,10 @@ public class VoiceController implements
                         break;
                     }
 
+
+
                 }
+
         }
     }
 
