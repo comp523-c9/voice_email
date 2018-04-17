@@ -207,6 +207,9 @@ public class VoiceController implements
                     } else if (validCommands[i].toUpperCase().contains("CONTINUE")) {
                         stateController.onCommandContinue();
                         break;
+                    } else if (validCommands[i].toUpperCase().contains("REPEAT")) {
+                        stateController.onCommandRepeat();
+                        break;
                     }
 
                 }
