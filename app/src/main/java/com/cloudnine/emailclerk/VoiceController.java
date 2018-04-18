@@ -8,6 +8,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.speech.RecognitionListener;
@@ -15,8 +16,6 @@ import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
-import android.widget.TextView;
-import android.widget.ToggleButton;
 import android.speech.tts.TextToSpeech;
 
 import java.util.ArrayList;
@@ -26,43 +25,61 @@ import java.util.Locale;
 public class VoiceController implements
         RecognitionListener {
 
-    private static final int REQUEST_RECORD_PERMISSION = 100;
+    private String LOG_TAG = "VoiceRecognitionActivity";
+    private static final int REQUEST_RECORD_PERMISSION = 100; //for mic permission
+
+    /**
+     * for speech to text.
+     */
     private SpeechRecognizer speech = null;
     private Intent recognizerIntent;
-    private String LOG_TAG = "VoiceRecognitionActivity";
-    private static Context context;
-    public String partialResult = "";
-    public String singlePartialResult = "";
+
+    private static Context context; //MainActivity's context
     private static TextToSpeech tts;
     private StateController stateController;
-    private String[] validCommands;
-    public static float speed;
+    private String[] validCommands; //Valid commands based on what state the app is currently on.
+
+    //results from speech to text.
+    public String partialResult = "";
+    public String singlePartialResult = "";
 //    private float[] micLevels;
 //    private int counter = 0;
 
 
 //    private int count = 1;
 
+    /** Retrieves the TTS speed value from the persistent SharedPreferences object
+     * @author Andrew Gill**/
+    private static float getspeedFlt(){
+        SharedPreferences settings = context.getSharedPreferences(MainActivity.PREFS_NAME,0);
+        float data =settings.getFloat("speedflt",10);
+        return data/10; // values from 1-20 from seekBar become 0.1-2.0 to work with tts.SpeechRate
+    }
+
     public VoiceController(Context context, Activity activity, StateController stateController)
 
     {
         this.context = context;
         this.stateController = stateController;
-        this.speed = 0.8f;
 //        micLevels = new float[5];
 //        for(int i=0;i<5;i++){
 //            micLevels[i] =0;
 //        }
 
+        //instantiate new SpeechRecognizer.
         speech = SpeechRecognizer.createSpeechRecognizer(context);
         Log.i(LOG_TAG, "isRecognitionAvailable: " + SpeechRecognizer.isRecognitionAvailable(context));
         speech.setRecognitionListener(this);
+
+        //set recognizerIntent with speech recognition, freeform model, and partial results active.
         recognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE,
                 "en");
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                 RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
+
+        //request microphone permission
         ActivityCompat.requestPermissions
                 (activity,
                         new String[]{Manifest.permission.RECORD_AUDIO},
@@ -70,48 +87,66 @@ public class VoiceController implements
     }
 
 
+    /**
+     * Instantiate TTS object if not available, then reads the input, IGNORING previous tts request.
+     * @param input message to read out loud
+     */
     public static void textToSpeech(String input) {
         final String inputs = input;
         final HashMap<String, String> params = new HashMap();
-        params.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(AudioManager.STREAM_ALARM));
+
+        params.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(AudioManager.STREAM_VOICE_CALL));
         if(tts == null) {
             // Instantiate TTS Object
-
             tts = new TextToSpeech(context, new TextToSpeech.OnInitListener() {
                 @Override
                 public void onInit(int i) {
                     tts.setLanguage(Locale.US);
-                    tts.setSpeechRate(speed);
+                    float spdflt = getspeedFlt();
+                    tts.setSpeechRate(spdflt);
                     tts.speak(inputs, TextToSpeech.QUEUE_FLUSH, params);
                 }
             });
         }
         else{
+            float spdflt = getspeedFlt();
+            tts.setSpeechRate(spdflt);
             tts.speak(input, TextToSpeech.QUEUE_FLUSH, params);
 
         }
     }
+    /**
+     * Instantiate TTS object if not available, then reads the input, AFTER the previous tts request has been completed.
+     * @param input message to read out loud
+     */
     public static void textToSpeechQueue(String input){
         final String inputs = input;
         final HashMap<String, String> params = new HashMap();
-        params.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(AudioManager.STREAM_ALARM));
+        params.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(AudioManager.STREAM_VOICE_CALL));
         if(tts == null) {
             // Instantiate TTS Object
             tts = new TextToSpeech(context, new TextToSpeech.OnInitListener() {
                 @Override
                 public void onInit(int i) {
                     tts.setLanguage(Locale.US);
-                    tts.setSpeechRate((float)0.8);
+                    float spdflt = getspeedFlt();
+                    tts.setSpeechRate(spdflt);
                     tts.speak(inputs, TextToSpeech.QUEUE_ADD, params);
                 }
             });
         }
         else{
+            float spdflt = getspeedFlt();
+            tts.setSpeechRate(spdflt);
             tts.speak(input, TextToSpeech.QUEUE_ADD, params);
-
         }
     }
 
+    /**
+     * Destroys current speech recognizer, then starts a new speech recognizer because cancel() does not end the process cleanly.
+     * Then the speechRecognizer starts listening.
+     * @param validCommands valid commands for speech to text to listen for.
+     */
     public void startListening(String[] validCommands){
         this.validCommands = validCommands;
         speech.stopListening();
@@ -119,15 +154,19 @@ public class VoiceController implements
         speech.destroy();
         speech = SpeechRecognizer.createSpeechRecognizer(context);
         speech.setRecognitionListener(this);
-        recognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE,
-                "en");
-        recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-        recognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
+//        recognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+//        recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE,
+//                "en");
+//        recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+//                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+//        recognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
         speech.startListening(recognizerIntent);
 
     }
+
+    /**
+     * Stops then destroys the speechRecognizer. Only to be called when onDestroy is called.
+     */
     public void stopListening(){
         speech.stopListening();
         speech.cancel();
@@ -141,6 +180,7 @@ public class VoiceController implements
 //        micLevel = micLevel/5;
 //        return micLevel;
 //    }
+
     @Override
     public void onBeginningOfSpeech() {
         Log.i(LOG_TAG, "onBeginningOfSpeech");
@@ -168,6 +208,11 @@ public class VoiceController implements
         Log.i(LOG_TAG, "onEvent");
     }
 
+
+    /**
+     * If one of the partial results comes out to be a valid command, calls the corresponding onCommmand method.
+     * @param partials
+     */
     @Override
     public void onPartialResults(Bundle partials) {
         String text = "";
@@ -178,7 +223,7 @@ public class VoiceController implements
 
         for (String result : matches) {
             text += result + "\n";
-            singlePartialResult = text;
+            singlePartialResult = result;
 
             MainActivity.returnedText.setText(singlePartialResult);
 
@@ -212,7 +257,10 @@ public class VoiceController implements
                         break;
                     }
 
+
+
                 }
+
         }
     }
 
@@ -221,6 +269,10 @@ public class VoiceController implements
         Log.i(LOG_TAG, "onReadyForSpeech");
     }
 
+    /**
+     * If there is a valid command, then relisten for the commands.  Otherwise, call onReplyAnswered and pass in the reply composed.
+     * @param results
+     */
     @Override
     public void onResults(Bundle results) {
         Log.i(LOG_TAG, "onResults");

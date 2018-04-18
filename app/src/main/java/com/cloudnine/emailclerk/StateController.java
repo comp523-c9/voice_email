@@ -56,18 +56,15 @@ public class StateController
     /**
      * @todo What the heck is this?
      */
-    private boolean sent;
-
-    /**
-     * @todo and this??
-     */
-    private boolean add;
+    private boolean queueTextToSpeech; //Checking if tts should be queued up instead of flushing
+    private boolean continueMessage; //Append previous message for continue method
+    private boolean readingState; //for repeat method.  Either repeat subject/sender or actual message.
 
     /**
      * Create the StateController
      * @param mainActivity Reference to the MainActivity core class of the app
-     * @param context @todo what is Context? Why do we need it?
-     * @param activity @todo what is an Activity? Why do we need it?
+     * @param context @todo what is Context? Why do we need it? for VC
+     * @param activity @todo what is an Activity? Why do we need it? for VC
      * @param service Service object for accessing the Gmail API; needed by EmailController
      * @see MainActivity
      * @see Context
@@ -106,6 +103,7 @@ public class StateController
     private void readNextEmail()
     {
         counter++;
+        readingState = false;
 //        if (counter == emails.size()) {
 //            voiceController.textToSpeech("You are out of emails. Please restart the app");
 //            return;
@@ -113,19 +111,18 @@ public class StateController
             emailController.fetchNewEmails(emails, SUBSEQUENT_FETCH_NUMBER);
         }
         Email curEmail = emails.get(counter);
-        String output = "New email from " + emailController.getNameFromRecipient(curEmail.getFrom()) + " with the subject " + curEmail.getSubject() + ". Would you like to read, skip or delete?";
-        String[] possibleInputs = new String[3];
+        String output = "New email from " + emailController.getNameFromRecipient(curEmail.getFrom()) + " with the subject " + curEmail.getSubject() + ". Would you like to read, repeat, skip or delete?";
+        String[] possibleInputs = new String[4];
         possibleInputs[0] = "SKIP";
         possibleInputs[1] = "DELETE";
         possibleInputs[2] = "READ";
+        possibleInputs[3] = "REPEAT";
 
-        if(sent)
-        {
+        //if queueTTS is true, do not cut off the last tts call. (mainly "email sent" or "email deleted")
+        if (queueTextToSpeech) {
             VoiceController.textToSpeechQueue(output);
-            sent = false;
-        }
-        else
-        {
+            queueTextToSpeech = false;
+        } else {
             VoiceController.textToSpeech(output);
         }
 
@@ -152,6 +149,7 @@ public class StateController
         possibleInputs[1] = "DELETE";
         possibleInputs[2] = "REPLY";
         possibleInputs[3] = "REPEAT";
+        readingState = true;
         voiceController.startListening(possibleInputs);
     }
 
@@ -160,9 +158,18 @@ public class StateController
      */
     public void onCommandSkip() { readNextEmail(); }
 
+    /**
+     *Repeat what was said on either readNextEmail or onCommandRead.
+     */
     public void onCommandRepeat() {
-        counter--;
-        readNextEmail();
+        if(!readingState) {
+            counter--;
+            readNextEmail();
+        }
+        else{
+            onCommandRead();
+        }
+
     }
     /**
      * Compose a new email as a reply to the current one
@@ -175,15 +182,16 @@ public class StateController
     }
 
     /**
-     * I am not sure what this does. @todo help?
-     * @param message A string of some sort?
+     * Receives a reply from VC once VC assumes that the reply was completed, then repeats the reply recorded.
+     * User then decides to skip, change, continue, or send the reply.
+     * @param message Reply recorded on VoiceController
      */
     public void onReplyAnswered(String message)
     {
-        if(add)
+        if(continueMessage)
         {
             this.messageBody = messageBody + " " + message;
-            add = false;
+            continueMessage = false;
         } else
         {
             this.messageBody = message;
@@ -199,14 +207,14 @@ public class StateController
     }
 
     /**
-     * Send the email? Reply? @todo this is very unclear
+     * Send the recorded reply.  4/18 - currently saves the reply to a draft.
      */
     public void onCommandSend()
     {
         Email curEmail = emails.get(counter);
         emailController.sendEmail(curEmail, messageBody, true);
         VoiceController.textToSpeech("The Email was sent");
-        sent = true;
+        queueTextToSpeech = true;
         readNextEmail();
     }
 
@@ -216,12 +224,12 @@ public class StateController
     public void onCommandChange() { onCommandReply(); }
 
     /**
-     * Not quite sure what this does
+     * Appends a new message to the previous reply.
      */
     public void onCommandContinue()
     {
         VoiceController.textToSpeech("Please continue your message");
-        add = true;
+        continueMessage = true;
         String[] possibleInputs = new String[0];
         voiceController.startListening(possibleInputs);
     }
