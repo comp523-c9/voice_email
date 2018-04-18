@@ -50,7 +50,7 @@ public class VoiceController implements
 
     /** Retrieves the TTS speed value from the persistent SharedPreferences object
      * @author Andrew Gill**/
-    private static float getspeedFlt(){
+    private static float getSpeedFlt(){
         SharedPreferences settings = context.getSharedPreferences(MainActivity.PREFS_NAME,0);
         float data =settings.getFloat("speedflt",10);
         return data/10; // values from 1-20 from seekBar become 0.1-2.0 to work with tts.SpeechRate
@@ -102,14 +102,14 @@ public class VoiceController implements
                 @Override
                 public void onInit(int i) {
                     tts.setLanguage(Locale.US);
-                    float spdflt = getspeedFlt();
+                    float spdflt = getSpeedFlt();
                     tts.setSpeechRate(spdflt);
                     tts.speak(inputs, TextToSpeech.QUEUE_FLUSH, params);
                 }
             });
         }
         else{
-            float spdflt = getspeedFlt();
+            float spdflt = getSpeedFlt();
             tts.setSpeechRate(spdflt);
             tts.speak(input, TextToSpeech.QUEUE_FLUSH, params);
 
@@ -129,14 +129,14 @@ public class VoiceController implements
                 @Override
                 public void onInit(int i) {
                     tts.setLanguage(Locale.US);
-                    float spdflt = getspeedFlt();
+                    float spdflt = getSpeedFlt();
                     tts.setSpeechRate(spdflt);
                     tts.speak(inputs, TextToSpeech.QUEUE_ADD, params);
                 }
             });
         }
         else{
-            float spdflt = getspeedFlt();
+            float spdflt = getSpeedFlt();
             tts.setSpeechRate(spdflt);
             tts.speak(input, TextToSpeech.QUEUE_ADD, params);
         }

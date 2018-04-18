@@ -94,7 +94,7 @@ public class SettingsController extends AppCompatActivity {
                         float flt_prog = (float)progress;
                         storeFloatInPrefs(flt_prog);
                         tts_speedtext.setText(String.valueOf(progress * 10) + "%");
-                        VoiceController.speed=flt_prog;
+                        //VoiceController.speed=flt_prog;
 
                     }
 
@@ -132,5 +132,4 @@ public class SettingsController extends AppCompatActivity {
              }
          });
     }
-
 }
