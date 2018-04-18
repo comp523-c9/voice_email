@@ -23,8 +23,8 @@ public class StateController
     //private SettingsController settings;
     private VoiceController voiceController;
     private EmailController emailController;
-    private static int INITIAL_FETCH_NUMBER = 6;
-    private static int SUBSEQUENT_FETCH_NUMBER = 10;
+    public static int INITIAL_FETCH_NUMBER = 6;
+    public static int SUBSEQUENT_FETCH_NUMBER = 10;
 
     //private String userEmail;
     //private String userName;
@@ -57,11 +57,8 @@ public class StateController
      * @todo What the heck is this?
      */
     private boolean sent;
-
-    /**
-     * @todo and this??
-     */
     private boolean add;
+    private boolean readingState;
 
     /**
      * Create the StateController
@@ -106,39 +103,30 @@ public class StateController
     private void readNextEmail()
     {
         counter++;
-        if (counter == emails.size())
-        {
-            VoiceController.textToSpeech("You are out of emails. Please restart the app");
-        } else if (counter == emails.size() - 5)
-        {
-            emailController.fetchNewEmails(emails.get(fetchNumber * 10), emails.get(emails.size() - 1));
+        readingState = false;
 //        if (counter == emails.size()) {
 //            voiceController.textToSpeech("You are out of emails. Please restart the app");
 //            return;
-        if (counter == emails.size() - 5) {
+        if (counter >= emails.size() - 5) {
             emailController.fetchNewEmails(emails, SUBSEQUENT_FETCH_NUMBER);
             fetchNumber++;
-        } else
-        {
-            Email curEmail = emails.get(counter);
-            String output = "New email from " + curEmail.getSenderName() + " with the subject " + curEmail.getSubject() + ". Would you like to read, skip or delete?";
-            String[] possibleInputs = new String[3];
-            possibleInputs[0] = "SKIP";
-            possibleInputs[1] = "DELETE";
-            possibleInputs[2] = "READ";
-
-            if(sent)
-            {
-                VoiceController.textToSpeechQueue(output);
-                sent = false;
-            }
-            else
-            {
-                VoiceController.textToSpeech(output);
-            }
-
-            voiceController.startListening(possibleInputs);
         }
+        Email curEmail = emails.get(counter);
+        String output = "New email from " + curEmail.getSenderName() + " with the subject " + curEmail.getSubject() + ". Would you like to read, repeat, skip or delete?";
+        String[] possibleInputs = new String[4];
+        possibleInputs[0] = "SKIP";
+        possibleInputs[1] = "DELETE";
+        possibleInputs[2] = "READ";
+        possibleInputs[3] = "REPEAT";
+
+        if (sent) {
+            VoiceController.textToSpeechQueue(output);
+            sent = false;
+        } else {
+            VoiceController.textToSpeech(output);
+        }
+
+        voiceController.startListening(possibleInputs);
     }
 
     /**
@@ -155,11 +143,13 @@ public class StateController
      */
     public void onCommandRead()
     {
-        VoiceController.textToSpeech(emails.get(counter).getMessage() + " Would you like to reply, skip or delete?");
-        String[] possibleInputs = new String[3];
+        VoiceController.textToSpeech(emails.get(counter).getMessage() + " Would you like to reply, repeat, skip or delete?");
+        String[] possibleInputs = new String[4];
         possibleInputs[0] = "SKIP";
         possibleInputs[1] = "DELETE";
         possibleInputs[2] = "REPLY";
+        possibleInputs[3] = "REPEAT";
+        readingState = true;
         voiceController.startListening(possibleInputs);
     }
 
@@ -168,6 +158,16 @@ public class StateController
      */
     public void onCommandSkip() { readNextEmail(); }
 
+    public void onCommandRepeat() {
+        if(!readingState) {
+            counter--;
+            readNextEmail();
+        }
+        else{
+            onCommandRead();
+        }
+
+    }
     /**
      * Compose a new email as a reply to the current one
      */

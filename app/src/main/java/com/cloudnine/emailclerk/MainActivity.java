@@ -56,6 +56,7 @@ import java.util.Set;
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 import android.view.View.OnClickListener;
+import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -94,9 +95,11 @@ public class MainActivity extends AppCompatActivity {
         Button btn1 = (Button) findViewById(R.id.buttontest);
         btn1.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
+                //Toast.makeText(MainActivity.this,String.valueOf(VoiceController.speed),Toast.LENGTH_LONG).show();
                 stateController.onCommandSkip();
             }
         });
+
         /*btn1.setOnClickListener(new View.OnClickListener() {
         /    public void onClick (View view){
 
