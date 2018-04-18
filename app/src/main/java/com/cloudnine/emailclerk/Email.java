@@ -1,5 +1,6 @@
 package com.cloudnine.emailclerk;
 
+import java.util.*;
 /**
  * Created by alecs on 4/4/2018.
  * @author Alec Schleicher
@@ -9,24 +10,23 @@ public class Email {
 
     private String id;
     private String threadId;
-    private String receiverAddress;
-    private String receiverName;
-    private String senderAddress;
-    private String senderName;
+    private String from;
+    private List<String> to;
+    private List<String> cc;
+    private String deliveredTo;
     private String subject;
     private String message;
     private String date;
 
     /** Constructor **/
-    Email(String id, String threadId, String receiverAddress, String receiverName,
-          String senderAddress, String senderName, String subject, String message, String date)
+    Email(String id, String threadId, String from, List<String> to, List<String> cc, String deliveredTo, String subject, String message, String date)
     {
         this.id = id;
         this.threadId = threadId;
-        this.receiverAddress = receiverAddress;
-        this.receiverName = receiverName;
-        this.senderAddress = senderAddress;
-        this.senderName = senderName;
+        this.from = from;
+        this.to = to;
+        this.cc = cc;
+        this.deliveredTo = deliveredTo;
         this.subject = subject;
         this.message = message;
         this.date = date;
@@ -41,20 +41,20 @@ public class Email {
         return threadId;
     }
 
-    public String getReceiverAddress() {
-        return receiverAddress;
+    public String getFrom() {
+        return from;
     }
 
-    public String getReceiverName() {
-        return receiverName;
+    public List<String> getTo() {
+        return to;
     }
 
-    public String getSenderAddress() {
-        return senderAddress;
+    public List<String> getCc() {
+        return cc;
     }
 
-    public String getSenderName() {
-        return senderName;
+    public String getDeliveredTo() {
+        return deliveredTo;
     }
 
     public String getSubject() {

@@ -23,8 +23,8 @@ public class StateController
     //private SettingsController settings;
     private VoiceController voiceController;
     private EmailController emailController;
-    public static int INITIAL_FETCH_NUMBER = 6;
-    public static int SUBSEQUENT_FETCH_NUMBER = 10;
+    public static int INITIAL_FETCH_NUMBER = 20;
+    public static int SUBSEQUENT_FETCH_NUMBER = 50;
 
     //private String userEmail;
     //private String userName;
@@ -109,10 +109,9 @@ public class StateController
 //            return;
         if (counter >= emails.size() - 5) {
             emailController.fetchNewEmails(emails, SUBSEQUENT_FETCH_NUMBER);
-            fetchNumber++;
         }
         Email curEmail = emails.get(counter);
-        String output = "New email from " + curEmail.getSenderName() + " with the subject " + curEmail.getSubject() + ". Would you like to read, repeat, skip or delete?";
+        String output = "New email from " + emailController.getNameFromRecipient(curEmail.getFrom()) + " with the subject " + curEmail.getSubject() + ". Would you like to read, repeat, skip or delete?";
         String[] possibleInputs = new String[4];
         possibleInputs[0] = "SKIP";
         possibleInputs[1] = "DELETE";
@@ -213,7 +212,7 @@ public class StateController
     public void onCommandSend()
     {
         Email curEmail = emails.get(counter);
-        emailController.sendEmail(curEmail.getSenderAddress(), curEmail.getReceiverAddress(), "Re: " + curEmail.getSubject(), messageBody, curEmail);
+        emailController.sendEmail(curEmail, messageBody, true);
         VoiceController.textToSpeech("The Email was sent");
         queueTextToSpeech = true;
         readNextEmail();

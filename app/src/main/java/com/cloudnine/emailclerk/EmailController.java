@@ -1,6 +1,8 @@
 package com.cloudnine.emailclerk;
 
 import android.os.AsyncTask;
+import android.text.TextUtils;
+
 import javax.mail.Session;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
@@ -72,20 +74,8 @@ public class EmailController {
     }
 
     /** This is the reply one **/
-    public void sendEmail(String toAddress, String fromAddress, String subject, String messageBody, Email email) {
-        List<String> paramsList = new ArrayList<String>();
-        paramsList.add(toAddress);
-        paramsList.add(email.getSenderName());
-        paramsList.add(fromAddress);
-        paramsList.add(email.getReceiverName());
-        paramsList.add(subject);
-        paramsList.add(messageBody);
-        paramsList.add(email.getID());
-
-        String[] params = new String[paramsList.size()];
-        params = paramsList.toArray(params);
-
-        new AsyncReplyToEmail().execute(params);
+    public void sendEmail(Email email, String messageBody, boolean replyAll) {
+        new AsyncReplyToEmail(email, replyAll).execute(messageBody);
     }
 
     public void fetchNewEmails(List<Email> emails, int fetchNum) {
@@ -182,7 +172,7 @@ public class EmailController {
                 listResponse = mService.users().messages().list("me").setLabelIds(labels).setMaxResults(new Long(num)).execute();
             } else { // Get a more specific set of emails using the input dates
                 startDate = Integer.toString(Integer.parseInt(startDate) + 1); // Add 1 second because 'after:' is inclusive
-                endDate = Integer.toString(Integer.parseInt(startDate) + 1); // Subtract 1 second from endDate as well...
+                endDate = Integer.toString(Integer.parseInt(endDate) + 1); // Subtract 1 second from endDate as well...
                 String query = "before:" + endDate + " || after:" + startDate;
                 listResponse = mService.users().messages().list("me").setLabelIds(labels).setMaxResults(new Long(num))
                         .setQ(query).execute();
@@ -226,49 +216,51 @@ public class EmailController {
                  *  Get the date the email was received
                  *  Info is retrieved by looking for specific headers in the email
                  * **/
-                String receiver = "";
-                String sender = "";
+                String from = "";
+                String to = "";
+                String ccRecipients = "";
+                String deliveredTo = "";
                 String subject = "";
                 String date = "";
 
                 List<MessagePartHeader> headers = curMessage.getPayload().getHeaders();
-                for(MessagePartHeader header:headers){
-                    if (subject == "" || sender == "" || receiver == "" || date == "") {
-                        String name = header.getName();
-                        if(name.equals("Subject")) {
-                            subject = header.getValue();
-                        } else if (name.equals("From")) {
-                            sender = header.getValue();
-                        } else if (name.equals("To")) {
-                            receiver = header.getValue();
-                        } else if (name.equals("Date")) {
-                            date = header.getValue();
-                        }
+                for(MessagePartHeader header : headers){
+                    String name = header.getName();
+                    if(name.equals("From")) {
+                        from = header.getValue();
+                    } else if (name.equals("To")) {
+                        to = header.getValue();
+                    } else if (name.equals("Cc")) {
+                        ccRecipients = header.getValue();
+                    } else if (name.equals("Delivered-To")) {
+                        deliveredTo = header.getValue();
+                    } else if (name.equals("Subject")) {
+                        subject = header.getValue();
+                    } else if (name.equals("Date")) {
+                        date = header.getValue();
                     }
                 }
 
-                String receiverAddress;
-                String receiverName;
-                String senderAddress;
-                String senderName;
-
-                /** Receiver and Sender is of the form:
-                 * John Smith <johnsmith@example.com> **/
-                if (receiver.indexOf("<") > 0) {
-                    receiverAddress = receiver.substring((receiver.indexOf("<")+1), receiver.indexOf(">"));
-                    receiverName = receiver.substring(0, receiver.indexOf("<")-1);
+                List<String> toList = new ArrayList<>();
+                if (to.contains(",")) {
+                        toList = Arrays.asList(to.split(","));
                 } else {
-                    receiverAddress = receiver;
-                    receiverName = "";
-                }
-                if (sender.indexOf("<") > 0) {
-                    senderAddress = sender.substring((sender.indexOf("<")+1), sender.indexOf(">"));
-                    senderName = sender.substring(0, sender.indexOf("<")-1);
-                } else {
-                    senderAddress = sender;
-                    senderName = "";
+                    toList.add(to);
                 }
 
+                List<String> ccList = new ArrayList<>();
+                if (!ccRecipients.equals("")) {
+                    if (ccRecipients.contains(",")) {
+                        ccList = Arrays.asList(ccRecipients.split(","));
+                    } else {
+                        ccList.add(ccRecipients);
+                    }
+                }
+
+                /** A complex way to parse MIME Emails and get the message body or any attachments
+                 *  If it's just a text/plain email, just grab the body and be done. Else, recursively
+                 *  loop to find attachments or plain text
+                 * **/
                 String messageBody = "";
 
                 if (curMessage.getPayload().getMimeType().equals("text/plain")) {
@@ -296,7 +288,8 @@ public class EmailController {
 
                 /** After all the email info we want is retrieved, create a new
                  * @Email object and add it to emailList **/
-                emailList.add(new Email(id, threadId, receiverAddress, receiverName, senderAddress, senderName, subject, messageBody, date));
+                emailList.add(new Email(id, threadId, from, toList, ccList, deliveredTo, subject, messageBody, date));
+
             }
 
             /** After all the emails are looped through, move on to
@@ -330,8 +323,8 @@ public class EmailController {
                 if (parts.get(x).getMimeType().contains("text/plain")) {
                     try {
                         String message = StringUtils.newStringUtf8(Base64.decodeBase64(parts.get(x).getBody().getData().trim().toString()));
-                        message = message.replaceAll("(\r\n|\n\r|\n|\r)", "");
-                        messageParts.add(message);
+                        message = message.replaceAll("(\r\n|\n\r|\n|\r)", "").trim();
+                        messageParts.add(message + ".");
                     } catch (Exception e){}
                 }
 
@@ -361,8 +354,12 @@ public class EmailController {
     private class AsyncReplyToEmail extends AsyncTask<String, Void, Void> {
 
         Exception mLastError;
+        Email email;
+        boolean replyAll;
 
-        AsyncReplyToEmail() {
+        AsyncReplyToEmail(Email email, boolean replyAll) {
+            this.email = email;
+            this.replyAll = replyAll;
             mLastError = null;
         }
 
@@ -380,28 +377,98 @@ public class EmailController {
         }
 
         private void asyncReplyToEmail(String[] params) {
-            String toAddress = params[0];
-            String toName = params[1];
-            String fromAddress = params[2];
-            String fromName = params[3];
-            String subject = params[4];
-            String messageBody = params[5];
-            String id = params[6];
+            String messageBody = params[0];
 
             Properties props = new Properties();
             Session session = Session.getDefaultInstance(props, null);
 
             try {
-                MimeMessage email = new MimeMessage(session);
-                email.setFrom(new InternetAddress(fromAddress, fromName));
-                email.addRecipient(javax.mail.Message.RecipientType.TO, new InternetAddress(toAddress, toName));
-                email.setSubject(subject);
-                email.setText(messageBody);
-                email.setHeader("In-Reply-To", id);
-                email.setHeader("References", id);
+                /** Instantiate mimemessage and set from address **/
+                MimeMessage mimeMessage = new MimeMessage(session);
+                mimeMessage.setFrom(new InternetAddress(this.email.getDeliveredTo())); // Set from
+
+                /** If it's a normal reply... **/
+                if (!replyAll) {
+                    /** Get the address and possible name of the sender (you) **/
+                    String address = getAddressFromRecipient(email.getFrom());
+                    String name = getNameFromRecipient(email.getFrom());
+
+                    /** Add it as a recipient **/
+                    if (name.equals("")) {
+                        mimeMessage.addRecipient(javax.mail.Message.RecipientType.TO, new InternetAddress(address));
+                    } else {
+                        mimeMessage.addRecipient(javax.mail.Message.RecipientType.TO, new InternetAddress(address, name));
+                    }
+                } else { /** Else if it's a reply all... **/
+
+                    List<InternetAddress> toRecipients= new ArrayList<>();
+
+                    /** First add the original sender as a recipient **/
+                    String address = getAddressFromRecipient(email.getFrom());
+                    String name = getNameFromRecipient(email.getFrom());
+                    if (name.equals("")) {
+                        toRecipients.add(new InternetAddress(address));
+                    } else {
+                        toRecipients.add(new InternetAddress(address, name));
+                    }
+
+                    /** then loop through other 'TO' recipients and add all of them except your own...**/
+                    String ownAddress = getAddressFromRecipient(email.getDeliveredTo());
+                    for (int i=0; i<email.getTo().size(); i++) {
+                        String toAddress = getAddressFromRecipient(email.getTo().get(i));
+                        String toName = getNameFromRecipient(email.getTo().get(i));
+
+                        /** If 'TO' recipient is not yourself... **/
+                        if (!toAddress.equals(ownAddress)) {
+                            /** Then add it to the list
+                             * If the name is not there, only pass in the address **/
+                            if (name.equals("")) {
+                                toRecipients.add(new InternetAddress(toAddress));
+                            } else {
+                                toRecipients.add(new InternetAddress(toAddress, toName));
+                            }
+                        }
+                    }
+
+                    /** Finally, convert toRecipients List into an Array and add it to the MimeMessage **/
+                    InternetAddress[] toArray = new InternetAddress[toRecipients.size()];
+                    for (int i=0; i<toArray.length; i++) {
+                        toArray[i] = toRecipients.get(i);
+                    }
+                    mimeMessage.addRecipients(javax.mail.Message.RecipientType.TO, toArray);
+
+                    /** Loop through 'Cc' recipients **/
+                    InternetAddress[] ccRecipients = new InternetAddress[email.getCc().size()];
+                    for (int i=0; i<email.getCc().size(); i++) {
+                        String ccAddress = getAddressFromRecipient(email.getCc().get(i));
+                        String ccName = getNameFromRecipient(email.getCc().get(i));
+
+                        /** If the name is not there, only pass in the address **/
+                        if (ccName.equals("")) {
+                            ccRecipients[i] = new InternetAddress(ccAddress);
+                        } else {
+                            ccRecipients[i] = new InternetAddress(ccAddress, ccName);
+                        }
+                    }
+                    mimeMessage.addRecipients(javax.mail.Message.RecipientType.CC, ccRecipients);
+
+                }
+
+                /** Set subject with Re: if not already there **/
+                String subject = email.getSubject();
+                if (subject.substring(0, 4).toUpperCase().contains("RE")) {
+                    mimeMessage.setSubject(subject);
+                } else {
+                    mimeMessage.setSubject("Re: " + subject);
+                }
+
+                /** Set message body... **/
+                mimeMessage.setText(messageBody);
+                mimeMessage.setHeader("In-Reply-To", email.getID());
+                mimeMessage.setHeader("References", email.getID());
 
                 ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-                email.writeTo(buffer);
+                mimeMessage.writeTo(buffer);
                 byte[] bytes = buffer.toByteArray();
                 String encodedEmail = Base64.encodeBase64URLSafeString(bytes);
                 com.google.api.services.gmail.model.Message message = new com.google.api.services.gmail.model.Message();
@@ -412,8 +479,6 @@ public class EmailController {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
-
         }
     }
 
@@ -494,6 +559,24 @@ public class EmailController {
                 return null;
             }
             return null;
+        }
+    }
+
+    public String getNameFromRecipient(String recipient) {
+
+        String name = "";
+
+        if (recipient.contains("<")) {
+            name = recipient.trim().substring(0, recipient.indexOf("<")-1);
+        }
+        return name;
+    }
+
+    public String getAddressFromRecipient(String recipient) {
+        if (recipient.contains("<")) {
+            return recipient.substring((recipient.indexOf("<")+1), recipient.indexOf(">"));
+        } else {
+            return recipient.trim();
         }
     }
 }
