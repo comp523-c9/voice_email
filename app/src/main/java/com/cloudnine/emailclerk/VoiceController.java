@@ -243,6 +243,9 @@ public class VoiceController implements
                     } else if (validCommands[i].toUpperCase().contains("REPLY")) {
                         stateController.onCommandReply();
                         break;
+                    } else if (validCommands[i].toUpperCase().contains("EVERYONE")) {
+                        stateController.onCommandReplyAll();
+                        break;
                     } else if (validCommands[i].toUpperCase().contains("CHANGE")) {
                         stateController.onCommandChange();
                         break;
