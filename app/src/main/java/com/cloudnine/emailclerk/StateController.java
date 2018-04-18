@@ -231,6 +231,39 @@ public class StateController
     }
 
     /**
+     * A general system to compose any arbitrary string in the app
+     * @return The text composed
+     */
+    public String composeBody()
+    {
+        String s = "";
+        boolean run = true;
+
+        while(run)
+        {
+
+        }
+
+        if(add)
+        {
+            this.messageBody = messageBody + " " + message;
+            add = false;
+        } else
+        {
+            this.messageBody = message;
+        }
+
+        VoiceController.textToSpeech("Your message was recorded as: " + messageBody + " Would you like to skip, change, continue, or send?");
+        String[] possibleInputs = new String[4];
+        possibleInputs[0] = "SEND";
+        possibleInputs[1] = "CHANGE";
+        possibleInputs[2] = "SKIP";
+        possibleInputs[3] = "CONTINUE";
+        voiceController.startListening(possibleInputs);
+        return s;
+    }
+
+    /**
      * Clean up anything needed to safely destroy the app
      */
     public void onDestroy()
