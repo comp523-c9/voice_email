@@ -23,6 +23,8 @@
       <activity android:name=".GmailAuth"
           android:theme="@style/Theme.Transparent">
       </activity>
+      <!---singleInstance ensures that everytime this activity is launched, it is the same instance
+      of it.  @author andrewg-->
       <activity
           android:name=".SettingsController"
           android:launchMode="singleInstance"

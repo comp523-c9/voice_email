@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--- @author andrewg-->
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -7,12 +8,10 @@
     android:layout_height="match_parent"
     tools:context="com.cloudnine.emailclerk.SettingsController">
 
-
+    <!---Imports the toolbar layout from toolbar.xml-->
     <include
         android:id="@+id/mCustomToolbar"
-        layout="@layout/toolbar"
-        tools:layout_editor_absoluteX="0dp"
-        tools:layout_editor_absoluteY="1dp" />
+        layout="@layout/toolbar" />
 
     <SeekBar
         android:id="@+id/tts_speedbar"
@@ -24,6 +23,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!---All parts of the layout besides the toolbar are wrapped in here.-->
     <View
         android:id="@+id/view"
         android:layout_width="348dp"

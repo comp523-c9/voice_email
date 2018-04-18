@@ -87,7 +87,8 @@ public class MainActivity extends AppCompatActivity {
 //        amanager.setStreamVolume(AudioManager.STREAM_RING, AudioManager.ADJUST_UNMUTE, 0);
 //        amanager.setStreamVolume(AudioManager.STREAM_SYSTEM, AudioManager.ADJUST_UNMUTE, 0);
 
-
+        /** Declares the toolbar and widgets for this activity
+         * @author andrewg**/
         Toolbar toolbar = (Toolbar) findViewById(R.id.mCustomToolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setTitle("Email Clerk");
@@ -95,20 +96,10 @@ public class MainActivity extends AppCompatActivity {
         Button btn1 = (Button) findViewById(R.id.buttontest);
         btn1.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                //Toast.makeText(MainActivity.this,String.valueOf(VoiceController.speed),Toast.LENGTH_LONG).show();
                 stateController.onCommandSkip();
             }
         });
 
-        /*btn1.setOnClickListener(new View.OnClickListener() {
-        /    public void onClick (View view){
-
-                SharedPreferences settings = getSharedPreferences(MainActivity.PREFS_NAME,0);
-                int data =settings.getInt("speed",10);
-                text1.setText(String.valueOf(data));
-            }
-        });
-        */
 
 
         // Start Gmail Authentication Activity
