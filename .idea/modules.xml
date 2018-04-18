@@ -4,8 +4,6 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/../../../alecs/Git/C9/voice_email/EmailClerk.iml" filepath="$PROJECT_DIR$/../../../alecs/Git/C9/voice_email/EmailClerk.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/voice_email.iml" filepath="$PROJECT_DIR$/voice_email.iml" />
       <module fileurl="file://$PROJECT_DIR$/voice_email.iml" filepath="$PROJECT_DIR$/voice_email.iml" />
     </modules>
   </component>
