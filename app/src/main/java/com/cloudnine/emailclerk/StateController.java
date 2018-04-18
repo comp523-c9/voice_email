@@ -85,7 +85,7 @@ public class StateController
         voiceController = new VoiceController(context, activity, this);
         //settings = new SettingsController();
 
-        emailController.getNewEmails(INITIAL_FETCH_NUMBER);
+        emailController.getNewEmails(INITIAL_FETCH_NUMBER, true);
     }
 
     /**
@@ -108,7 +108,7 @@ public class StateController
 //            voiceController.textToSpeech("You are out of emails. Please restart the app");
 //            return;
         if (counter >= emails.size() - 5) {
-            emailController.fetchNewEmails(emails, SUBSEQUENT_FETCH_NUMBER);
+            emailController.fetchNewEmails(emails, SUBSEQUENT_FETCH_NUMBER, false);
         }
         Email curEmail = emails.get(counter);
         String output = "New email from " + emailController.getNameFromRecipient(curEmail.getFrom()) + " with the subject " + curEmail.getSubject() + ". Would you like to read, repeat, skip or delete?";
