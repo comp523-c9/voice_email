@@ -237,6 +237,9 @@ public class VoiceController implements
                     } else if (validCommands[i].toUpperCase().contains("SKIP")) {
                         stateController.onCommandSkip();
                         break;
+                    } else if (validCommands[i].toUpperCase().contains("SAVE")) {
+                        stateController.onCommandSave();
+                        break;
                     } else if (validCommands[i].toUpperCase().contains("DELETE")) {
                         stateController.onCommandDelete();
                         break;

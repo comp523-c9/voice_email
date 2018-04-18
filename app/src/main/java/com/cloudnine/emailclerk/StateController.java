@@ -128,12 +128,13 @@ public class StateController
             emailController.fetchNewEmails(emails, SUBSEQUENT_FETCH_NUMBER, false);
         }
         Email curEmail = emails.get(counter);
-        String output = "New email from " + emailController.getNameFromRecipient(curEmail.getFrom()) + " with the subject " + curEmail.getSubject() + ". Would you like to read, repeat, skip or delete?";
-        String[] possibleInputs = new String[4];
+        String output = "New email from " + emailController.getNameFromRecipient(curEmail.getFrom()) + " with the subject " + curEmail.getSubject() + ". Would you like to read, repeat, skip, save, or delete?";
+        String[] possibleInputs = new String[5];
         possibleInputs[0] = "SKIP";
         possibleInputs[1] = "DELETE";
         possibleInputs[2] = "READ";
-        possibleInputs[3] = "REPEAT";
+        possibleInputs[3] = "SAVE";
+        possibleInputs[4] = "REPEAT";
 
         //if queueTTS is true, do not cut off the last tts call. (mainly "email sent" or "email deleted")
         if (queueTextToSpeech) {
@@ -152,6 +153,15 @@ public class StateController
     public void onCommandDelete()
     {
         emailController.deleteEmail(emails.get(counter).getID());
+        readNextEmail();
+    }
+
+    /**
+     * Save the current email
+     */
+    public void onCommandSave()
+    {
+        //emailController.labelEmail(emails.get(counter).getID());
         readNextEmail();
     }
 
