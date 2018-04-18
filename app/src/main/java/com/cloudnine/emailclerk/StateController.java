@@ -51,14 +51,31 @@ public class StateController
      * Accumulates the message body
      */
     private String messageBody;
-    private int fetchNumber; //The number of times new emails are fetched (50 at a time)
 
     /**
-     * @todo What the heck is this?
+     * The number of times new emails are fetched (50 at a time)
      */
-    private boolean queueTextToSpeech; //Checking if tts should be queued up instead of flushing
-    private boolean continueMessage; //Append previous message for continue method
-    private boolean readingState; //for repeat method.  Either repeat subject/sender or actual message.
+    private int fetchNumber;
+
+    /**
+     * Checking if tts should be queued up instead of flushing
+     */
+    private boolean queueTextToSpeech;
+
+    /**
+     * Checking if we want to reply or reply all
+     */
+    private boolean replyAll;
+
+    /**
+     * Append previous message for continue method
+     */
+    private boolean continueMessage;
+
+    /**
+     * for repeat method.  Either repeat subject/sender or actual message.
+     */
+    private boolean readingState;
 
     /**
      * Create the StateController
@@ -144,11 +161,12 @@ public class StateController
     public void onCommandRead()
     {
         VoiceController.textToSpeech(emails.get(counter).getMessage() + " Would you like to reply, repeat, skip or delete?");
-        String[] possibleInputs = new String[4];
+        String[] possibleInputs = new String[5];
         possibleInputs[0] = "SKIP";
         possibleInputs[1] = "DELETE";
         possibleInputs[2] = "REPLY";
         possibleInputs[3] = "REPEAT";
+        possibleInputs[4] = "EVERYONE";
         readingState = true;
         voiceController.startListening(possibleInputs);
     }
@@ -171,11 +189,24 @@ public class StateController
         }
 
     }
+
     /**
      * Compose a new email as a reply to the current one
      */
     public void onCommandReply()
     {
+        replyAll = false;
+        VoiceController.textToSpeech("Please state your desired message.");
+        String[] possibleInputs = new String[0];
+        voiceController.startListening(possibleInputs);
+    }
+
+    /**
+     * As onCommandReply, but replies to all senders
+     */
+    public void onCommandReplyAll()
+    {
+        replyAll = true;
         VoiceController.textToSpeech("Please state your desired message.");
         String[] possibleInputs = new String[0];
         voiceController.startListening(possibleInputs);
@@ -212,7 +243,7 @@ public class StateController
     public void onCommandSend()
     {
         Email curEmail = emails.get(counter);
-        emailController.sendEmail(curEmail, messageBody, true);
+        emailController.sendEmail(curEmail, messageBody, replyAll);
         VoiceController.textToSpeech("The Email was sent");
         queueTextToSpeech = true;
         readNextEmail();
@@ -243,43 +274,3 @@ public class StateController
         voiceController.stopListening();
     }
 }
-
-//class EmailIterator<T extends Email> implements Iterator<T>
-//{
-//    private T[] storedEmails;
-//    private EmailController controller;
-//    private int pointer;
-//
-//    private final int MARGIN = 10;
-//    private final int BUFFER = 50;
-//
-//    public EmailIterator(EmailController controller)
-//    {
-//        this.storedEmails = (T[]) new Object[BUFFER];
-//        this.controller = controller;
-//        this.pointer = 0;
-//    }
-//
-//    public boolean hasNext()
-//    {
-//        return pointer < BUFFER - 1;
-//    }
-//
-//    public T next()
-//    {
-//        if(!hasNext())
-//        {
-//            throw new NoSuchElementException();
-//        }
-//        else
-//        {
-//            if(BUFFER - pointer < MARGIN)
-//            {
-//                controller.getNewEmails(10);
-//            }
-//
-//            pointer++;
-//            return storedEmails[pointer];
-//        }
-//    }
-//}
