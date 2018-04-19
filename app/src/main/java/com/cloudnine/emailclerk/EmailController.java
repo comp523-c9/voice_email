@@ -622,27 +622,49 @@ public class EmailController {
         @Override
         protected Void doInBackground(Void... params) {
 
-            /** Create a list of labels ids to add and remove **/
-            List<String> labelIdsToAdd = new ArrayList<>();
-            List<String> labelIdsToRemove = new ArrayList<>();
+            try {
 
-            /** Add the label id of the Email Clerk label **/
-            for (int i=0; i<allLabels.size(); i++) {
-                if (allLabels.get(i).getName().equals("Email Clerk")) {
-                    labelIdsToAdd.add(allLabels.get(i).getId());
-                }
-            }
+                /** Create a list of labels ids to add and remove **/
+                List<String> labelIdsToAdd = new ArrayList<>();
+                List<String> labelIdsToRemove = new ArrayList<>();
 
-            /** Populate labelIdsToRemove by checking for names in labelsList **/
-            for (int i=0; i<labelList.size(); i++) {
-                for (int j=0; j<allLabels.size(); j++) {
-                    if (allLabels.get(j).getName().equals(labelList.get(i))) {
-                        labelIdsToRemove.add(allLabels.get(j).getId());
+                /** Add the label id of the Email Clerk label **/
+                for (int i=0; i<allLabels.size(); i++) {
+                    if (allLabels.get(i).getName().equals("Email Clerk")) {
+                        labelIdsToAdd.add(allLabels.get(i).getId());
                     }
                 }
-            }
 
-            try {
+                /** If an Email Clerk label hasn't been found, make one and search again for the Id **/
+                if (labelIdsToAdd.size() == 0) {
+                    Label label = new Label().setName("Email Clerk").setLabelListVisibility("labelShow").setMessageListVisibility("show");
+                    mService.users().labels().create("me", label).execute();
+
+                    allLabels = mService.users().labels().list("me").execute().getLabels();
+
+                    for (int i=0; i<allLabels.size(); i++) {
+                        if (allLabels.get(i).getName().equals("Email Clerk")) {
+                            labelIdsToAdd.add(allLabels.get(i).getId());
+                        }
+                    }
+                }
+
+                /** Populate labelIdsToRemove by checking for names in labelsList **/
+                for (int i=0; i<labelList.size(); i++) {
+                    for (int j=0; j<allLabels.size(); j++) {
+                        if (allLabels.get(j).getName().equals(labelList.get(i))) {
+                            labelIdsToRemove.add(allLabels.get(j).getId());
+                        }
+                    }
+                }
+
+                /** Remove SENT label if going to be removed **/
+                for (int i=0; i<labelIdsToRemove.size(); i++) {
+                    if (labelIdsToRemove.get(i).equals("SENT")) {
+                        labelIdsToRemove.remove(i);
+                    }
+                }
+
                 ModifyMessageRequest mods = new ModifyMessageRequest().setAddLabelIds(labelIdsToAdd).setRemoveLabelIds(labelIdsToRemove);
                 mService.users().messages().modify("me", messageId, mods).execute();
             } catch (Exception e) {
