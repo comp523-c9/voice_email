@@ -78,6 +78,10 @@ public class EmailController {
         new AsyncReplyToEmail(email, replyAll).execute(messageBody);
     }
 
+    public void saveEmail(Email email) {
+        new AsyncMoveEmail(email.getID(), email.getLabelList()).execute();
+    }
+
     public void fetchNewEmails(List<Email> emails, int fetchNum, boolean unreadOnly) {
         int earliestDate = 0;
         int latestDate = 0;
@@ -316,9 +320,12 @@ public class EmailController {
                     }
                 }
 
+                /** Lastly, get the email labels **/
+                List<String> labelList = curMessage.getLabelIds();
+
                 /** After all the email info we want is retrieved, create a new
                  * @Email object and add it to emailList **/
-                emailList.add(new Email(id, threadId, from, toList, ccList, deliveredTo, subject, messageBody, date));
+                emailList.add(new Email(id, threadId, from, toList, ccList, deliveredTo, subject, messageBody, date, labelList));
 
             }
 
@@ -592,5 +599,33 @@ public class EmailController {
         }
     }
 
+    private class AsyncMoveEmail extends AsyncTask<Void, Void, Void> {
 
+        String messageId;
+        List<String> labelList;
+        Exception mLastError;
+
+        AsyncMoveEmail(String messageId, List<String> labelList) {
+            this.messageId = messageId;
+            this.labelList = labelList;
+            mLastError = null;
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+
+            List<String> labelsToAdd = new ArrayList<>();
+            labelsToAdd.add("Email Clerk");
+
+            try {
+                ModifyMessageRequest mods = new ModifyMessageRequest().setAddLabelIds(labelsToAdd).setRemoveLabelIds(labelList);
+                mService.users().messages().modify("me", messageId, mods);
+            } catch (Exception e) {
+                mLastError = e;
+                cancel(true);
+                return null;
+            }
+            return null;
+        }
+    }
 }
