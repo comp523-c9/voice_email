@@ -97,10 +97,7 @@ public class StateController
         emails = new ArrayList<Email>();
 
         emailController = new EmailController(this, service);
-
-        VoiceController.tts_speed = SettingsController.getSpeedFlt();
         voiceController = new VoiceController(context, activity, this);
-
         emailController.getNewEmails(INITIAL_FETCH_NUMBER, true);
     }
 
@@ -118,7 +115,6 @@ public class StateController
      */
     private void readNextEmail()
     {
-        VoiceController.tts_speed = SettingsController.getSpeedFlt();
         counter++;
         readingState = false;
 //        if (counter == emails.size()) {
@@ -162,6 +158,8 @@ public class StateController
     public void onCommandSave()
     {
         emailController.saveEmail(emails.get(counter));
+        voiceController.textToSpeech("The email was saved");
+        queueTextToSpeech = true;
         readNextEmail();
     }
 
@@ -170,7 +168,8 @@ public class StateController
      */
     public void onCommandRead()
     {
-        VoiceController.textToSpeech(emails.get(counter).getMessage() + " Would you like to reply, repeat, skip, read, or delete?");
+        VoiceController.textToSpeech(emails.get(counter).getMessage() + " Would you like to reply, repeat, skip, save, or delete?" +
+                "if you would like to reply all, say everyone");
         String[] possibleInputs = new String[6];
         possibleInputs[0] = "SKIP";
         possibleInputs[1] = "DELETE";

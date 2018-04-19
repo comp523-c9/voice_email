@@ -94,11 +94,11 @@ public class MainActivity extends AppCompatActivity {
         getSupportActionBar().setTitle("Email Clerk");
         final TextView text1 = (TextView) findViewById(R.id.texttest);
         Button btn1 = (Button) findViewById(R.id.buttontest);
-        btn1.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                stateController.onCommandSkip();
-            }
-        });
+//        btn1.setOnClickListener(new View.OnClickListener() {
+//            public void onClick(View v) {
+//                stateController.onCommandSkip();
+//            }
+//        });
 
 
 

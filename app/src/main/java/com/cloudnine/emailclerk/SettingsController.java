@@ -34,8 +34,8 @@ public class SettingsController extends AppCompatActivity {
 
     /**Stores Boolean values in the SharedPreferences object.
      * **/
-    public static float getSpeedFlt(){
-        SharedPreferences settings = context.getSharedPreferences(MainActivity.PREFS_NAME,0);
+    public static float getSpeedFlt(Context context1){
+        SharedPreferences settings = context1.getSharedPreferences(MainActivity.PREFS_NAME,0);
         float fltval =settings.getFloat("speedflt",10);
         return fltval/10;
     }

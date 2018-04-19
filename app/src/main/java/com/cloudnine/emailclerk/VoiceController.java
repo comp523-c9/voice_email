@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
@@ -52,9 +53,9 @@ public class VoiceController implements
 
     /** Retrieves the TTS speed value from the persistent SharedPreferences object
      * @author Andrew Gill**/
-    private static float getSpeedFlt(){
-        return tts_speed;
-    }
+//    private static float getSpeedFlt(){
+//        return tts_speed;
+//    }
 
     public VoiceController(Context context, Activity activity, StateController stateController)
 
@@ -102,14 +103,14 @@ public class VoiceController implements
                 @Override
                 public void onInit(int i) {
                     tts.setLanguage(Locale.US);
-                    float spdflt = getSpeedFlt();
+                    float spdflt = SettingsController.getSpeedFlt(context);
                     tts.setSpeechRate(spdflt);
                     tts.speak(inputs, TextToSpeech.QUEUE_FLUSH, params);
                 }
             });
         }
         else{
-            float spdflt = getSpeedFlt();
+            float spdflt = SettingsController.getSpeedFlt(context);
             tts.setSpeechRate(spdflt);
             tts.speak(input, TextToSpeech.QUEUE_FLUSH, params);
 
@@ -129,14 +130,14 @@ public class VoiceController implements
                 @Override
                 public void onInit(int i) {
                     tts.setLanguage(Locale.US);
-                    float spdflt = getSpeedFlt();
+                    float spdflt = SettingsController.getSpeedFlt(context);
                     tts.setSpeechRate(spdflt);
                     tts.speak(inputs, TextToSpeech.QUEUE_ADD, params);
                 }
             });
         }
         else{
-            float spdflt = getSpeedFlt();
+            float spdflt = SettingsController.getSpeedFlt(context);
             tts.setSpeechRate(spdflt);
             tts.speak(input, TextToSpeech.QUEUE_ADD, params);
         }
@@ -258,6 +259,9 @@ public class VoiceController implements
                             break;
                         case "REPEAT":
                             stateController.onCommandRepeat();
+                            break;
+                        case "SAVE":
+                            stateController.onCommandSave();
                             break;
                     }
 //                    if (validCommands[i].toUpperCase().contains("READ")) {
