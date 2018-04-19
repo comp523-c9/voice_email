@@ -1,7 +1,6 @@
 package com.cloudnine.emailclerk;
 
 import android.os.AsyncTask;
-import android.text.TextUtils;
 
 import javax.mail.Session;
 import javax.mail.internet.InternetAddress;
@@ -32,6 +31,13 @@ public class EmailController {
 
     private com.google.api.services.gmail.Gmail mService;
     StateController stateController;
+
+    /** EmailController keeps a one-time reference to all Labels (w/ their name and id, etc)
+     *  If expanded upon, Label could be made its own class and this functionality could be moved
+     *  to StateController. With the current scope of the project, it makes sense to keep it all
+     *  in EmailController
+     */
+    List<Label> allLabels = new ArrayList<>();
 
     /** Constructor takes a reference to post
      * @StateController and the Gmail service object to use in API calls
@@ -76,6 +82,10 @@ public class EmailController {
     /** This is the reply one **/
     public void sendEmail(Email email, String messageBody, boolean replyAll) {
         new AsyncReplyToEmail(email, replyAll).execute(messageBody);
+    }
+
+    public void saveEmail(Email email) {
+        new AsyncMoveEmail(email.getID(), email.getLabelList()).execute();
     }
 
     public void fetchNewEmails(List<Email> emails, int fetchNum, boolean unreadOnly) {
@@ -197,6 +207,8 @@ public class EmailController {
 
             ListMessagesResponse listResponse;
 
+            ListLabelsResponse listLabelsReponse = mService.users().labels().list("me").execute();
+            allLabels = listLabelsReponse.getLabels();
 
             if (getNewBatch.equals("false")) { // If not first batch...
                 listResponse = mService.users().messages().list("me").setLabelIds(labels).setMaxResults(new Long(num)).execute();
@@ -316,9 +328,12 @@ public class EmailController {
                     }
                 }
 
+                /** Lastly, get the email labels **/
+                List<String> labelList = curMessage.getLabelIds();
+
                 /** After all the email info we want is retrieved, create a new
                  * @Email object and add it to emailList **/
-                emailList.add(new Email(id, threadId, from, toList, ccList, deliveredTo, subject, messageBody, date));
+                emailList.add(new Email(id, threadId, from, toList, ccList, deliveredTo, subject, messageBody, date, labelList));
 
             }
 
@@ -592,5 +607,50 @@ public class EmailController {
         }
     }
 
+    private class AsyncMoveEmail extends AsyncTask<Void, Void, Void> {
 
+        String messageId;
+        List<String> labelList;
+        Exception mLastError;
+
+        AsyncMoveEmail(String messageId, List<String> labelList) {
+            this.messageId = messageId;
+            this.labelList = labelList;
+            mLastError = null;
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+
+            /** Create a list of labels ids to add and remove **/
+            List<String> labelIdsToAdd = new ArrayList<>();
+            List<String> labelIdsToRemove = new ArrayList<>();
+
+            /** Add the label id of the Email Clerk label **/
+            for (int i=0; i<allLabels.size(); i++) {
+                if (allLabels.get(i).getName().equals("Email Clerk")) {
+                    labelIdsToAdd.add(allLabels.get(i).getId());
+                }
+            }
+
+            /** Populate labelIdsToRemove by checking for names in labelsList **/
+            for (int i=0; i<labelList.size(); i++) {
+                for (int j=0; j<allLabels.size(); j++) {
+                    if (allLabels.get(j).getName().equals(labelList.get(i))) {
+                        labelIdsToRemove.add(allLabels.get(j).getId());
+                    }
+                }
+            }
+
+            try {
+                ModifyMessageRequest mods = new ModifyMessageRequest().setAddLabelIds(labelIdsToAdd).setRemoveLabelIds(labelIdsToRemove);
+                mService.users().messages().modify("me", messageId, mods).execute();
+            } catch (Exception e) {
+                mLastError = e;
+                cancel(true);
+                return null;
+            }
+            return null;
+        }
+    }
 }
