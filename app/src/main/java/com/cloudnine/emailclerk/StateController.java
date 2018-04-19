@@ -20,7 +20,6 @@ public class StateController
 {
 
     private MainActivity master;
-    //private SettingsController settings;
     private VoiceController voiceController;
     private EmailController emailController;
     public static int INITIAL_FETCH_NUMBER = 20;
@@ -92,15 +91,15 @@ public class StateController
     StateController(MainActivity mainActivity, Context context, Activity activity, Gmail service)
     {
         this.master = mainActivity;
-        //this.mService = service; TODO remove maybe
         this.counter = -1;
         messageBody = "";
         fetchNumber = 0;
         emails = new ArrayList<Email>();
 
         emailController = new EmailController(this, service);
+
+        VoiceController.tts_speed = SettingsController.getSpeedFlt();
         voiceController = new VoiceController(context, activity, this);
-        //settings = new SettingsController();
 
         emailController.getNewEmails(INITIAL_FETCH_NUMBER, true);
     }
@@ -119,6 +118,7 @@ public class StateController
      */
     private void readNextEmail()
     {
+        VoiceController.tts_speed = SettingsController.getSpeedFlt();
         counter++;
         readingState = false;
 //        if (counter == emails.size()) {
@@ -273,4 +273,5 @@ public class StateController
         VoiceController.textToSpeech("");
         voiceController.stopListening();
     }
+
 }
