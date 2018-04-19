@@ -45,11 +45,11 @@ public class EmailController {
      * This is used for the first batch of emails only
      * Later batches are fetched with fetchNewEmails
      * **/
-    public void getNewEmails(int num) {
+    public void getNewEmails(int num, boolean unreadOnly) {
         String[] params = new String[2];
         params[0] = Integer.toString(num);
         params[1] = "false"; // False flag used in AsyncGetEmails - false means it's not a new batch
-        new AsyncGetEmails().execute(params);
+        new AsyncGetEmails(unreadOnly).execute(params);
     }
 
     /** Moves the email with the specified threadID into the trash folder **/
@@ -78,7 +78,7 @@ public class EmailController {
         new AsyncReplyToEmail(email, replyAll).execute(messageBody);
     }
 
-    public void fetchNewEmails(List<Email> emails, int fetchNum) {
+    public void fetchNewEmails(List<Email> emails, int fetchNum, boolean unreadOnly) {
         int earliestDate = 0;
         int latestDate = 0;
         for (Email email: emails) {
@@ -91,7 +91,7 @@ public class EmailController {
             }
         }
 
-        new AsyncGetEmails(Integer.toString(latestDate), Integer.toString(earliestDate)).execute(Integer.toString(fetchNum), "true");
+        new AsyncGetEmails(Integer.toString(latestDate), Integer.toString(earliestDate), unreadOnly).execute(Integer.toString(fetchNum), "true");
     }
 
     /** Helper method to convert a generic date to Epoch time
@@ -108,6 +108,26 @@ public class EmailController {
             Exception b = e;
         }
         return convertedDate.substring(0, convertedDate.length() - 3); // Chop off the last 3 digits to convert to seconds
+    }
+
+    /** Helper method that pulls out a name, if there, from a recipient String **/
+    public String getNameFromRecipient(String recipient) {
+
+        String name = "";
+
+        if (recipient.contains("<")) {
+            name = recipient.trim().substring(0, recipient.indexOf("<")-1);
+        }
+        return name;
+    }
+
+    /** Helper method that pulls out the email address from a recipient String **/
+    public String getAddressFromRecipient(String recipient) {
+        if (recipient.contains("<")) {
+            return recipient.substring((recipient.indexOf("<")+1), recipient.indexOf(">"));
+        } else {
+            return recipient.trim();
+        }
     }
 
     /** Above are the simplified methods that StateController calls
@@ -127,19 +147,22 @@ public class EmailController {
         Exception mLastError;
         String startDate;
         String endDate;
+        boolean unreadOnly;
 
         /** Default constructor that doesn't need email dates, used by
          * @getNewEmails() **/
-        AsyncGetEmails() {
+        AsyncGetEmails(boolean unreadOnly) {
+            this.unreadOnly = unreadOnly;
             mLastError = null;
         }
 
         /** Overloaded constructor that takes in dates. This constructor is used by
          * @fetchNewEmails() **/
-        AsyncGetEmails(String startDate, String endDate) {
+        AsyncGetEmails(String startDate, String endDate, boolean unreadOnly) {
             mLastError = null;
             this.startDate = startDate;
             this.endDate = endDate;
+            this.unreadOnly = unreadOnly;
         }
 
         /** The only actual asynchronous part of the AsyncTask **/
@@ -157,14 +180,21 @@ public class EmailController {
 
         private List<Email> asyncGetEmails(int num, String getNewBatch) throws IOException {
 
-            // Create list to store email objects...
+            /** Create list to store email objects... **/
             List<Email> emailList = new ArrayList<Email>();
 
-            // Initialize batch object (for batch API request)
+            /** Initialize batch object (for batch API request) **/
             BatchRequest batch = mService.batch();
 
+            /** Get emails from the inbox only **/
             List<String> labels = new ArrayList<String>();
             labels.add("INBOX");
+
+            /** If only getting unread emails, add to label **/
+            if(unreadOnly) {
+                labels.add("UNREAD");
+            }
+
             ListMessagesResponse listResponse;
 
 
@@ -562,21 +592,5 @@ public class EmailController {
         }
     }
 
-    public String getNameFromRecipient(String recipient) {
 
-        String name = "";
-
-        if (recipient.contains("<")) {
-            name = recipient.trim().substring(0, recipient.indexOf("<")-1);
-        }
-        return name;
-    }
-
-    public String getAddressFromRecipient(String recipient) {
-        if (recipient.contains("<")) {
-            return recipient.substring((recipient.indexOf("<")+1), recipient.indexOf(">"));
-        } else {
-            return recipient.trim();
-        }
-    }
 }

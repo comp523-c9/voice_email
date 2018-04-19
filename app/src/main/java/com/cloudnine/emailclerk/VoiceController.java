@@ -102,14 +102,14 @@ public class VoiceController implements
                 @Override
                 public void onInit(int i) {
                     tts.setLanguage(Locale.US);
-                    float spdflt = getspeedFlt();
+                    float spdflt = getSpeedFlt();
                     tts.setSpeechRate(spdflt);
                     tts.speak(inputs, TextToSpeech.QUEUE_FLUSH, params);
                 }
             });
         }
         else{
-            float spdflt = getspeedFlt();
+            float spdflt = getSpeedFlt();
             tts.setSpeechRate(spdflt);
             tts.speak(input, TextToSpeech.QUEUE_FLUSH, params);
 
@@ -129,14 +129,14 @@ public class VoiceController implements
                 @Override
                 public void onInit(int i) {
                     tts.setLanguage(Locale.US);
-                    float spdflt = getspeedFlt();
+                    float spdflt = getSpeedFlt();
                     tts.setSpeechRate(spdflt);
                     tts.speak(inputs, TextToSpeech.QUEUE_ADD, params);
                 }
             });
         }
         else{
-            float spdflt = getspeedFlt();
+            float spdflt = getSpeedFlt();
             tts.setSpeechRate(spdflt);
             tts.speak(input, TextToSpeech.QUEUE_ADD, params);
         }
@@ -242,6 +242,9 @@ public class VoiceController implements
                         break;
                     } else if (validCommands[i].toUpperCase().contains("REPLY")) {
                         stateController.onCommandReply();
+                        break;
+                    } else if (validCommands[i].toUpperCase().contains("EVERYONE")) {
+                        stateController.onCommandReplyAll();
                         break;
                     } else if (validCommands[i].toUpperCase().contains("CHANGE")) {
                         stateController.onCommandChange();
