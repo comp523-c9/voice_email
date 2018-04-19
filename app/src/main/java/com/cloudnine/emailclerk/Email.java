@@ -17,9 +17,11 @@ public class Email {
     private String subject;
     private String message;
     private String date;
+    private List<String> labelList;
 
     /** Constructor **/
-    Email(String id, String threadId, String from, List<String> to, List<String> cc, String deliveredTo, String subject, String message, String date)
+    Email(String id, String threadId, String from, List<String> to, List<String> cc, String deliveredTo,
+          String subject, String message, String date, List<String> labelList)
     {
         this.id = id;
         this.threadId = threadId;
@@ -30,6 +32,7 @@ public class Email {
         this.subject = subject;
         this.message = message;
         this.date = date;
+        this.labelList = labelList;
     }
 
     /** Getters **/
@@ -67,5 +70,9 @@ public class Email {
 
     public String getDate() {
         return date;
+    }
+
+    public List<String> getLabelList() {
+        return labelList;
     }
 }
