@@ -170,7 +170,7 @@ public class StateController
      */
     public void onCommandRead()
     {
-        VoiceController.textToSpeech(emails.get(counter).getMessage() + " Would you like to reply, repeat, skip or delete?");
+        VoiceController.textToSpeech(emails.get(counter).getMessage() + " Would you like to reply, repeat, skip, read, or delete?");
         String[] possibleInputs = new String[6];
         possibleInputs[0] = "SKIP";
         possibleInputs[1] = "DELETE";
