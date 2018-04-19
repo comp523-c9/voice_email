@@ -1,5 +1,6 @@
 package com.cloudnine.emailclerk;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.app.Activity;
@@ -28,7 +29,22 @@ public class SettingsController extends AppCompatActivity {
     private static Switch readSwitch;
     private static int tts_progress_value = 10;
     private static boolean skip_read;
+    private static Context context; //MainActivity's context
 
+
+    /**Stores Boolean values in the SharedPreferences object.
+     * **/
+    public static float getSpeedFlt(){
+        SharedPreferences settings = context.getSharedPreferences(MainActivity.PREFS_NAME,0);
+        float fltval =settings.getFloat("speedflt",10);
+        return fltval/10;
+    }
+
+    public static boolean getSkipRead(){
+        SharedPreferences settings = context.getSharedPreferences(MainActivity.PREFS_NAME,0);
+        boolean skipRead = settings.getBoolean("skipread",false);
+        return skipRead;
+    }
 
     /**Stores Boolean values in the SharedPreferences object.
      * **/
@@ -61,6 +77,7 @@ public class SettingsController extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
 
+        context = this.getApplicationContext();
         SharedPreferences settings = getSharedPreferences(MainActivity.PREFS_NAME,0);
         toolbar = (Toolbar) findViewById(R.id.mCustomToolbar);
         setSupportActionBar(toolbar);
