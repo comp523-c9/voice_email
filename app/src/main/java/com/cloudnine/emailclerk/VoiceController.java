@@ -52,7 +52,7 @@ public class VoiceController implements
 
     /** Retrieves the TTS speed value from the persistent SharedPreferences object
      * @author Andrew Gill**/
-    private static float getspeedFlt(){
+    private static float getSpeedFlt(){
         return tts_speed;
     }
 
