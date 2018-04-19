@@ -1,7 +1,6 @@
 package com.cloudnine.emailclerk;
 
 import android.os.AsyncTask;
-import android.text.TextUtils;
 
 import javax.mail.Session;
 import javax.mail.internet.InternetAddress;
@@ -32,6 +31,13 @@ public class EmailController {
 
     private com.google.api.services.gmail.Gmail mService;
     StateController stateController;
+
+    /** EmailController keeps a one-time reference to all Labels (w/ their name and id, etc)
+     *  If expanded upon, Label could be made its own class and this functionality could be moved
+     *  to StateController. With the current scope of the project, it makes sense to keep it all
+     *  in EmailController
+     */
+    List<Label> allLabels = new ArrayList<>();
 
     /** Constructor takes a reference to post
      * @StateController and the Gmail service object to use in API calls
@@ -201,6 +207,8 @@ public class EmailController {
 
             ListMessagesResponse listResponse;
 
+            ListLabelsResponse listLabelsReponse = mService.users().labels().list("me").execute();
+            allLabels = listLabelsReponse.getLabels();
 
             if (getNewBatch.equals("false")) { // If not first batch...
                 listResponse = mService.users().messages().list("me").setLabelIds(labels).setMaxResults(new Long(num)).execute();
@@ -614,12 +622,29 @@ public class EmailController {
         @Override
         protected Void doInBackground(Void... params) {
 
-            List<String> labelsToAdd = new ArrayList<>();
-            labelsToAdd.add("Email Clerk");
+            /** Create a list of labels ids to add and remove **/
+            List<String> labelIdsToAdd = new ArrayList<>();
+            List<String> labelIdsToRemove = new ArrayList<>();
+
+            /** Add the label id of the Email Clerk label **/
+            for (int i=0; i<allLabels.size(); i++) {
+                if (allLabels.get(i).getName().equals("Email Clerk")) {
+                    labelIdsToAdd.add(allLabels.get(i).getId());
+                }
+            }
+
+            /** Populate labelIdsToRemove by checking for names in labelsList **/
+            for (int i=0; i<labelList.size(); i++) {
+                for (int j=0; j<allLabels.size(); j++) {
+                    if (allLabels.get(j).getName().equals(labelList.get(i))) {
+                        labelIdsToRemove.add(allLabels.get(j).getId());
+                    }
+                }
+            }
 
             try {
-                ModifyMessageRequest mods = new ModifyMessageRequest().setAddLabelIds(labelsToAdd).setRemoveLabelIds(labelList);
-                mService.users().messages().modify("me", messageId, mods);
+                ModifyMessageRequest mods = new ModifyMessageRequest().setAddLabelIds(labelIdsToAdd).setRemoveLabelIds(labelIdsToRemove);
+                mService.users().messages().modify("me", messageId, mods).execute();
             } catch (Exception e) {
                 mLastError = e;
                 cancel(true);
