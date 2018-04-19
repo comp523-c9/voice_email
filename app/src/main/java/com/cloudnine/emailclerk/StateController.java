@@ -125,7 +125,7 @@ public class StateController
 //            voiceController.textToSpeech("You are out of emails. Please restart the app");
 //            return;
         if (counter >= emails.size() - 5) {
-            emailController.fetchNewEmails(emails, SUBSEQUENT_FETCH_NUMBER, false);
+            emailController.fetchNewEmails(emails, SUBSEQUENT_FETCH_NUMBER, SettingsController.getSkipRead());
         }
         Email curEmail = emails.get(counter);
         String output = "New email from " + emailController.getNameFromRecipient(curEmail.getFrom()) + " with the subject " + curEmail.getSubject() + ". Would you like to read, repeat, skip, save, or delete?";
@@ -216,7 +216,6 @@ public class StateController
      */
     public void onCommandReplyAll()
     {
-        replyAll = true;
         VoiceController.textToSpeech("Please state your desired message.");
         String[] possibleInputs = new String[0];
         voiceController.startListening(possibleInputs);
