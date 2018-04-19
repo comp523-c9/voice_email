@@ -216,7 +216,6 @@ public class StateController
      */
     public void onCommandReplyAll()
     {
-        replyAll = true;
         VoiceController.textToSpeech("Please state your desired message.");
         String[] possibleInputs = new String[0];
         voiceController.startListening(possibleInputs);
