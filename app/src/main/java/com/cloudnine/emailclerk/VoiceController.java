@@ -231,39 +231,63 @@ public class VoiceController implements
                 if (singlePartialResult.toUpperCase().contains(validCommands[i])) {
                     MainActivity.returnedText.setText(singlePartialResult);
                     singlePartialResult = "";
-                    if (validCommands[i].toUpperCase().contains("READ")) {
-                        stateController.onCommandRead();
-                        break;
-                    } else if (validCommands[i].toUpperCase().contains("SKIP")) {
-                        stateController.onCommandSkip();
-                        break;
-                    } else if (validCommands[i].toUpperCase().contains("SAVE")) {
-                        stateController.onCommandSave();
-                        break;
-                    } else if (validCommands[i].toUpperCase().contains("DELETE")) {
-                        stateController.onCommandDelete();
-                        break;
-                    } else if (validCommands[i].toUpperCase().contains("REPLY")) {
-                        stateController.onCommandReply();
-                        break;
-                    } else if (validCommands[i].toUpperCase().contains("EVERYONE")) {
-                        stateController.onCommandReplyAll();
-                        break;
-                    } else if (validCommands[i].toUpperCase().contains("CHANGE")) {
-                        stateController.onCommandChange();
-                        break;
-                    } else if (validCommands[i].toUpperCase().contains("SEND")) {
-                        stateController.onCommandSend();
-                        break;
-                    } else if (validCommands[i].toUpperCase().contains("CONTINUE")) {
-                        stateController.onCommandContinue();
-                        break;
-                    } else if (validCommands[i].toUpperCase().contains("REPEAT")) {
-                        stateController.onCommandRepeat();
-                        break;
+                    switch (validCommands[i].toUpperCase()){
+                        case "READ":
+                            stateController.onCommandRead();
+                            break;
+                        case "SKIP":
+                            stateController.onCommandSkip();
+                            break;
+                        case "DELETE":
+                            stateController.onCommandDelete();
+                            break;
+                        case "REPLY":
+                            stateController.onCommandReply();
+                            break;
+                        case "EVERYONE":
+                            stateController.onCommandReplyAll();
+                            break;
+                        case "CHANGE":
+                            stateController.onCommandChange();
+                            break;
+                        case "SEND":
+                            stateController.onCommandSend();
+                            break;
+                        case "CONTINUE":
+                            stateController.onCommandContinue();
+                            break;
+                        case "REPEAT":
+                            stateController.onCommandRepeat();
+                            break;
                     }
-
-
+//                    if (validCommands[i].toUpperCase().contains("READ")) {
+//                        stateController.onCommandRead();
+//                        break;
+//                    } else if (validCommands[i].toUpperCase().contains("SKIP")) {
+//                        stateController.onCommandSkip();
+//                        break;
+//                    } else if (validCommands[i].toUpperCase().contains("DELETE")) {
+//                        stateController.onCommandDelete();
+//                        break;
+//                    } else if (validCommands[i].toUpperCase().contains("REPLY")) {
+//                        stateController.onCommandReply();
+//                        break;
+//                    } else if (validCommands[i].toUpperCase().contains("EVERYONE")) {
+//                        stateController.onCommandReplyAll();
+//                        break;
+//                    } else if (validCommands[i].toUpperCase().contains("CHANGE")) {
+//                        stateController.onCommandChange();
+//                        break;
+//                    } else if (validCommands[i].toUpperCase().contains("SEND")) {
+//                        stateController.onCommandSend();
+//                        break;
+//                    } else if (validCommands[i].toUpperCase().contains("CONTINUE")) {
+//                        stateController.onCommandContinue();
+//                        break;
+//                    } else if (validCommands[i].toUpperCase().contains("REPEAT")) {
+//                        stateController.onCommandRepeat();
+//                        break;
+//                    }
 
                 }
 
