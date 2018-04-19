@@ -25,6 +25,8 @@ import java.util.Locale;
 public class VoiceController implements
         RecognitionListener {
 
+    public static float tts_speed = 0;
+
     private String LOG_TAG = "VoiceRecognitionActivity";
     private static final int REQUEST_RECORD_PERMISSION = 100; //for mic permission
 
@@ -51,9 +53,7 @@ public class VoiceController implements
     /** Retrieves the TTS speed value from the persistent SharedPreferences object
      * @author Andrew Gill**/
     private static float getspeedFlt(){
-        SharedPreferences settings = context.getSharedPreferences(MainActivity.PREFS_NAME,0);
-        float data =settings.getFloat("speedflt",10);
-        return data/10; // values from 1-20 from seekBar become 0.1-2.0 to work with tts.SpeechRate
+        return tts_speed;
     }
 
     public VoiceController(Context context, Activity activity, StateController stateController)

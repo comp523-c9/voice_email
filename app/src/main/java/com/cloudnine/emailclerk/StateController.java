@@ -20,7 +20,6 @@ public class StateController
 {
 
     private MainActivity master;
-    //private SettingsController settings;
     private VoiceController voiceController;
     private EmailController emailController;
     public static int INITIAL_FETCH_NUMBER = 20;
@@ -75,15 +74,15 @@ public class StateController
     StateController(MainActivity mainActivity, Context context, Activity activity, Gmail service)
     {
         this.master = mainActivity;
-        //this.mService = service; TODO remove maybe
         this.counter = -1;
         messageBody = "";
         fetchNumber = 0;
         emails = new ArrayList<Email>();
 
         emailController = new EmailController(this, service);
+
+        VoiceController.tts_speed = SettingsController.getSpeedFlt();
         voiceController = new VoiceController(context, activity, this);
-        //settings = new SettingsController();
 
         emailController.getNewEmails(INITIAL_FETCH_NUMBER);
     }
@@ -102,6 +101,7 @@ public class StateController
      */
     private void readNextEmail()
     {
+        VoiceController.tts_speed = SettingsController.getSpeedFlt();
         counter++;
         readingState = false;
 //        if (counter == emails.size()) {
@@ -243,43 +243,3 @@ public class StateController
         voiceController.stopListening();
     }
 }
-
-//class EmailIterator<T extends Email> implements Iterator<T>
-//{
-//    private T[] storedEmails;
-//    private EmailController controller;
-//    private int pointer;
-//
-//    private final int MARGIN = 10;
-//    private final int BUFFER = 50;
-//
-//    public EmailIterator(EmailController controller)
-//    {
-//        this.storedEmails = (T[]) new Object[BUFFER];
-//        this.controller = controller;
-//        this.pointer = 0;
-//    }
-//
-//    public boolean hasNext()
-//    {
-//        return pointer < BUFFER - 1;
-//    }
-//
-//    public T next()
-//    {
-//        if(!hasNext())
-//        {
-//            throw new NoSuchElementException();
-//        }
-//        else
-//        {
-//            if(BUFFER - pointer < MARGIN)
-//            {
-//                controller.getNewEmails(10);
-//            }
-//
-//            pointer++;
-//            return storedEmails[pointer];
-//        }
-//    }
-//}
