@@ -161,7 +161,7 @@ public class StateController
      */
     public void onCommandSave()
     {
-        //emailController.labelEmail(emails.get(counter).getID());
+        emailController.saveEmail(emails.get(counter));
         readNextEmail();
     }
 
