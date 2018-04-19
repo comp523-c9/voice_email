@@ -171,12 +171,13 @@ public class StateController
     public void onCommandRead()
     {
         VoiceController.textToSpeech(emails.get(counter).getMessage() + " Would you like to reply, repeat, skip or delete?");
-        String[] possibleInputs = new String[5];
+        String[] possibleInputs = new String[6];
         possibleInputs[0] = "SKIP";
         possibleInputs[1] = "DELETE";
         possibleInputs[2] = "REPLY";
         possibleInputs[3] = "REPEAT";
         possibleInputs[4] = "EVERYONE";
+        possibleInputs[5] = "SAVE";
         readingState = true;
         voiceController.startListening(possibleInputs);
     }
