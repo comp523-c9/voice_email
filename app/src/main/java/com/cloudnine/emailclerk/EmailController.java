@@ -386,7 +386,7 @@ public class EmailController {
         protected void onPostExecute(List<Email> output) {
             if (output != null && output.size() != 0) {
                 stateController.emails.addAll(output);
-                if (stateController.emails.size()==stateController.INITIAL_FETCH_NUMBER) {
+                if (stateController.emails.size()<=stateController.INITIAL_FETCH_NUMBER) {
                     stateController.onEmailsRetrieved();
                 }
             }
