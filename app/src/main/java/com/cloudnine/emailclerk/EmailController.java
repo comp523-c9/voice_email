@@ -316,11 +316,13 @@ public class EmailController {
                         for (int y=0; y<messageParts.size(); y++) {
                             messageBody += messageParts.get(y) + " ";
                         }
-                    } catch (Exception e) {
-
+                    } catch (NullPointerException e) {
+                        messageBody = "An error was found while trying to parse the message body";
                     }
                 }
-                
+
+                /** If no message body is found, set it to the snippet if it exists, else say there's
+                 *  no message body **/
                 if (messageBody.equals("")) {
                     messageBody = curMessage.getSnippet();
                     if (messageBody.equals("")) {
@@ -401,10 +403,12 @@ public class EmailController {
         Exception mLastError;
         Email email;
         boolean replyAll;
+        boolean sendAsDraft;
 
-        AsyncReplyToEmail(Email email, boolean replyAll) {
+        AsyncReplyToEmail(Email email, boolean replyAll, boolean sendAsDraft) {
             this.email = email;
             this.replyAll = replyAll;
+            this.sendAsDraft = sendAsDraft;
             mLastError = null;
         }
 
@@ -518,9 +522,16 @@ public class EmailController {
                 String encodedEmail = Base64.encodeBase64URLSafeString(bytes);
                 com.google.api.services.gmail.model.Message message = new com.google.api.services.gmail.model.Message();
                 message.setRaw(encodedEmail);
-                Draft draft = new Draft();
-                draft.setMessage(message);
-                mService.users().drafts().create("me", draft).execute();
+
+                /** Send as Draft or actual Email depending on input **/
+                if (sendAsDraft) {
+                    Draft draft = new Draft();
+                    draft.setMessage(message);
+                    mService.users().drafts().create("me", draft).execute();
+                } else {
+                    mService.users().messages().send("me", message).execute();
+                }
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
