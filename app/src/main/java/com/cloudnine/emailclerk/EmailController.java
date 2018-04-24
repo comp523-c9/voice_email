@@ -511,7 +511,10 @@ public class EmailController {
                     mimeMessage.setSubject("Re: " + subject);
                 }
 
-                /** Set message body... **/
+                /** Add a message indicating it's from Email Clerk **/
+                messageBody += "\n Sent using Email Clerk (A voice-driven Email application)";
+
+                /** Set message body and other headers **/
                 mimeMessage.setText(messageBody);
                 mimeMessage.setHeader("In-Reply-To", email.getID());
                 mimeMessage.setHeader("References", email.getID());
