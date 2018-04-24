@@ -260,41 +260,14 @@ public class VoiceController implements
                         case "REPEAT":
                             stateController.onCommandRepeat();
                             break;
+                        case "DRAFT":
+                            stateController.onCommandDraft();
+                            break;
                         case "SAVE":
                             stateController.onCommandSave();
                             break;
                     }
-//                    if (validCommands[i].toUpperCase().contains("READ")) {
-//                        stateController.onCommandRead();
-//                        break;
-//                    } else if (validCommands[i].toUpperCase().contains("SKIP")) {
-//                        stateController.onCommandSkip();
-//                        break;
-//                    } else if (validCommands[i].toUpperCase().contains("DELETE")) {
-//                        stateController.onCommandDelete();
-//                        break;
-//                    } else if (validCommands[i].toUpperCase().contains("REPLY")) {
-//                        stateController.onCommandReply();
-//                        break;
-//                    } else if (validCommands[i].toUpperCase().contains("EVERYONE")) {
-//                        stateController.onCommandReplyAll();
-//                        break;
-//                    } else if (validCommands[i].toUpperCase().contains("CHANGE")) {
-//                        stateController.onCommandChange();
-//                        break;
-//                    } else if (validCommands[i].toUpperCase().contains("SEND")) {
-//                        stateController.onCommandSend();
-//                        break;
-//                    } else if (validCommands[i].toUpperCase().contains("CONTINUE")) {
-//                        stateController.onCommandContinue();
-//                        break;
-//                    } else if (validCommands[i].toUpperCase().contains("REPEAT")) {
-//                        stateController.onCommandRepeat();
-//                        break;
-//                    }
-
                 }
-
         }
     }
 
