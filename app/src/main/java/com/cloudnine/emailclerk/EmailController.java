@@ -80,8 +80,8 @@ public class EmailController {
     }
 
     /** This is the reply one **/
-    public void sendEmail(Email email, String messageBody, boolean replyAll) {
-        new AsyncReplyToEmail(email, replyAll).execute(messageBody);
+    public void sendEmail(Email email, String messageBody, boolean replyAll, boolean sendAsDraft) {
+        new AsyncReplyToEmail(email, replyAll, sendAsDraft).execute(messageBody);
     }
 
     public void saveEmail(Email email) {
