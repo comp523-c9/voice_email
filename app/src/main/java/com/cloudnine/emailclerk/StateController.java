@@ -101,6 +101,7 @@ public class StateController {
     StateController(MainActivity mainActivity, Context context, Activity activity, Gmail service) {
         this.master = mainActivity;
         this.counter = -1;
+        this.listOptions = SettingsController.getSkipCommands();
         messageBody = "";
         fetchNumber = 0;
         emails = new ArrayList<Email>();
