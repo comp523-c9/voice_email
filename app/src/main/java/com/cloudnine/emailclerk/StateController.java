@@ -22,6 +22,7 @@ public class StateController {
     private MainActivity master;
     private VoiceController voiceController;
     private EmailController emailController;
+    private Boolean listOptions = true;
     public static int INITIAL_FETCH_NUMBER = 10;
     public static int SUBSEQUENT_FETCH_NUMBER = 50;
 
@@ -133,7 +134,8 @@ public class StateController {
             emailController.fetchNewEmails(emails, SUBSEQUENT_FETCH_NUMBER, SettingsController.getSkipRead());
         }
         Email curEmail = emails.get(counter);
-        String output = "New email from " + emailController.getNameFromRecipient(curEmail.getFrom()) + " with the subject " + curEmail.getSubject() + ". Would you like to read, repeat, skip, save, or delete?";
+        String output = "New email from " + emailController.getNameFromRecipient(curEmail.getFrom()) + " with the subject " + curEmail.getSubject() +
+                ((listOptions) ? ". Would you like to read, repeat, skip, save, or delete?" : ".");
         String[] possibleInputs = new String[5];
         possibleInputs[0] = "SKIP";
         possibleInputs[1] = "DELETE";
@@ -176,8 +178,8 @@ public class StateController {
      * Read the message body of the current email
      */
     public void onCommandRead() {
-        String output = emails.get(counter).getMessage() + " Would you like to reply, repeat, skip, save, or delete?" +
-                "if you would like to reply all, say everyone";
+        String output = emails.get(counter).getMessage() +
+                ((listOptions) ? ". Would you like to reply, repeat, skip, save, or delete? if you would like to reply all, say everyone" : ".");
         VoiceController.textToSpeech(output);
         String[] possibleInputs = new String[6];
         possibleInputs[0] = "SKIP";
@@ -249,7 +251,8 @@ public class StateController {
             this.messageBody = message;
         }
 
-        VoiceController.textToSpeech("Your message was recorded as: " + messageBody + " Would you like to skip, draft, change, continue, repeat, or send?");
+        VoiceController.textToSpeech("Your message was recorded as: " + messageBody +
+                        ((listOptions) ? ". Would you like to skip, draft, change, continue, repeat, or send?" : "."));
         String[] possibleInputs = new String[6];
         possibleInputs[0] = "SEND";
         possibleInputs[1] = "CHANGE";
