@@ -65,23 +65,9 @@ public class EmailController {
         new AsyncDeleteEmail().execute(params);
     }
 
-    /** sendEmail() is overloaded. This is the 'compose' one **/
-    public void sendEmail(String toAddress, String fromAddress, String subject, String messageBody) {
-        List<String> paramsList = new ArrayList<String>();
-        paramsList.add(toAddress);
-        paramsList.add(fromAddress);
-        paramsList.add(subject);
-        paramsList.add(messageBody);
-
-        String[] params = new String[paramsList.size()];
-        params = paramsList.toArray(params);
-
-        new AsyncComposeEmail().execute(params);
-    }
-
     /** This is the reply one **/
-    public void sendEmail(Email email, String messageBody, boolean replyAll, boolean sendAsDraft) {
-        new AsyncReplyToEmail(email, replyAll, sendAsDraft).execute(messageBody);
+    public void sendEmail(Email email, String messageBody, boolean replyAll, boolean sendAsDraft, boolean includeSig) {
+        new AsyncReplyToEmail(email, replyAll, sendAsDraft, includeSig).execute(messageBody);
     }
 
     public void saveEmail(Email email) {
@@ -404,11 +390,13 @@ public class EmailController {
         Email email;
         boolean replyAll;
         boolean sendAsDraft;
+        boolean includeSig;
 
-        AsyncReplyToEmail(Email email, boolean replyAll, boolean sendAsDraft) {
+        AsyncReplyToEmail(Email email, boolean replyAll, boolean sendAsDraft, boolean includeSig) {
             this.email = email;
             this.replyAll = replyAll;
             this.sendAsDraft = sendAsDraft;
+            this.includeSig = includeSig;
             mLastError = null;
         }
 
@@ -511,8 +499,10 @@ public class EmailController {
                     mimeMessage.setSubject("Re: " + subject);
                 }
 
-                /** Add a message indicating it's from Email Clerk **/
-                messageBody += "\n Sent using Email Clerk (A voice-driven Email application)";
+                /** Add a message indicating it's from Email Clerk if setting is passed **/
+                if (includeSig) {
+                    messageBody += "\n Sent using Email Clerk (A voice-driven Email application)";
+                }
 
                 /** Set message body and other headers **/
                 mimeMessage.setText(messageBody);
