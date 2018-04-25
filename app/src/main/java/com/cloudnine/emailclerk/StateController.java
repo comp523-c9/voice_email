@@ -128,7 +128,7 @@ public class StateController {
         readingState = false;
         replyState = false;
         if (counter == emails.size()) {
-            voiceController.textToSpeech("You are out of emails. Please restart the app");
+            VoiceController.textToSpeech("You are out of emails. Please restart the app");
             return;
         }
         if (counter >= emails.size() - 5) {
@@ -270,7 +270,7 @@ public class StateController {
      */
     public void onCommandSend() {
         Email curEmail = emails.get(counter);
-        emailController.sendEmail(curEmail, messageBody, replyAll, !sendAsDraft);
+        emailController.sendEmail(curEmail, messageBody, replyAll, !sendAsDraft, SettingsController.getIncludeSig());
         VoiceController.textToSpeech("The Email was sent");
         queueTextToSpeech = true;
         readNextEmail();
@@ -294,7 +294,7 @@ public class StateController {
     }
     public void onCommandDraft(){
         Email curEmail = emails.get(counter);
-        emailController.sendEmail(curEmail, messageBody, replyAll, sendAsDraft);
+        emailController.sendEmail(curEmail, messageBody, replyAll, sendAsDraft, SettingsController.getIncludeSig());
         VoiceController.textToSpeech("The Email was drafted");
         queueTextToSpeech = true;
         readNextEmail();
