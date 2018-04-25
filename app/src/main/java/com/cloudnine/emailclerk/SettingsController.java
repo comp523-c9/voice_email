@@ -27,30 +27,53 @@ public class SettingsController extends AppCompatActivity {
     private static SeekBar tts_seekbar;
     private static TextView tts_speedtext;
     private static Switch readSwitch;
+    private static Switch sigSwitch;
+    private static Switch hideCommandSwitch;
     private static int tts_progress_value = 10;
     private static boolean skip_read;
-    private static Context context;
+    private static boolean signature_added;
+    private static boolean commands_hidden;
+    private static Context context; //MainActivity's context
 
 
-    /**Stores Boolean values in the SharedPreferences object.
-     * **/
-    public float getSpeedFlt(){
-        SharedPreferences settings = context.getSharedPreferences(MainActivity.PREFS_NAME,0);
+    public static float getSpeedFlt(Context context1){
+        SharedPreferences settings = context1.getSharedPreferences(MainActivity.PREFS_NAME,0);
         float fltval =settings.getFloat("speedflt",10);
         return fltval/10;
     }
 
-    public boolean getSkipRead(){
+    public static boolean getSkipRead(){
         SharedPreferences settings = context.getSharedPreferences(MainActivity.PREFS_NAME,0);
         boolean skipRead = settings.getBoolean("skipread",false);
         return skipRead;
     }
+    public static boolean getIncludeSig(){
+        SharedPreferences settings = context.getSharedPreferences(MainActivity.PREFS_NAME,0);
+        boolean sigIncluded = settings.getBoolean("sigadded",false);
+        return sigIncluded;
+    }
+    public static boolean getSkipCommands(){
+        SharedPreferences settings = context.getSharedPreferences(MainActivity.PREFS_NAME,0);
+        boolean commandsSkipped = settings.getBoolean("skipcommands",false);
+        return commandsSkipped;
+    }
+    /**Stores Boolean values in the SharedPreferences object.
+     * **/
 
-    /**Stores boolean values in the SharedPreferences object.**/
-
-    private void storeBoolInPrefs(){
+    private void storeBoolInPrefs(int switchCode){
         SharedPreferences settings = getSharedPreferences(MainActivity.PREFS_NAME,0);
         SharedPreferences.Editor editor = settings.edit();
+        switch(switchCode){
+            case 0:
+                editor.putBoolean("skipread",skip_read);
+                break;
+            case 1:
+                editor.putBoolean("sigadded",signature_added);
+                break;
+            case 2:
+                editor.putBoolean("skipcommands",commands_hidden);
+                break;
+        }
         editor.putBoolean("skipread",skip_read);
         editor.commit();
     }
@@ -76,15 +99,19 @@ public class SettingsController extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
 
-        this.context = getApplicationContext();
+        context = this.getApplicationContext();
         SharedPreferences settings = getSharedPreferences(MainActivity.PREFS_NAME,0);
         toolbar = (Toolbar) findViewById(R.id.mCustomToolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         tts_progress_value=settings.getInt("speed",tts_progress_value);
         skip_read=settings.getBoolean("skipread",skip_read);
+        signature_added=settings.getBoolean("sigadded",signature_added);
+        commands_hidden=settings.getBoolean("skipcommands",commands_hidden);
         ttsSpeedBar();
         skipReadSwitch();
+        signatureSwitch();
+        HideCommandSwitch();
     }
     /** This sets up a SeekBar widget and its change listeners.  Text-to-Speech values are registered
      * from 1 to 20 and printed as percents, with a default at 100%.
@@ -139,13 +166,47 @@ public class SettingsController extends AppCompatActivity {
              public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                  if (isChecked){
                      skip_read = true;
-                     storeBoolInPrefs();
+                     storeBoolInPrefs(0);
                  }
                  else {
                      skip_read = false;
-                     storeBoolInPrefs();
+                     storeBoolInPrefs(0);
                  }
              }
          });
+    }
+    public void signatureSwitch () {
+        sigSwitch = (Switch) findViewById(R.id.signature_switch);
+        sigSwitch.setChecked(signature_added);
+        sigSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked){
+                    signature_added = true;
+                    storeBoolInPrefs(1);
+                }
+                else {
+                    signature_added = false;
+                    storeBoolInPrefs(1);
+                }
+            }
+        });
+    }
+    public void HideCommandSwitch () {
+        hideCommandSwitch = (Switch) findViewById(R.id.skip_command_switch);
+        hideCommandSwitch.setChecked(commands_hidden);
+        hideCommandSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked){
+                    commands_hidden = true;
+                    storeBoolInPrefs(2);
+                }
+                else {
+                    commands_hidden = false;
+                    storeBoolInPrefs(2);
+                }
+            }
+        });
     }
 }

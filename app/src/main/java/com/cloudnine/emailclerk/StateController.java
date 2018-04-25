@@ -2,6 +2,7 @@ package com.cloudnine.emailclerk;
 
 import android.app.Activity;
 import android.content.Context;
+
 import com.google.api.services.gmail.Gmail;
 
 import java.util.*;
@@ -11,19 +12,18 @@ import java.util.*;
  * that holds the state of the app and manages most
  * activities including that of the EmailController
  * and the VoiceController
- * @see EmailController
- * @see VoiceController
  *
  * @author Ben
+ * @see EmailController
+ * @see VoiceController
  */
-public class StateController
-{
+public class StateController {
 
     private MainActivity master;
-    //private SettingsController settings;
     private VoiceController voiceController;
     private EmailController emailController;
-    public static int INITIAL_FETCH_NUMBER = 20;
+    private Boolean listOptions = true;
+    public static int INITIAL_FETCH_NUMBER = 10;
     public static int SUBSEQUENT_FETCH_NUMBER = 50;
 
     //private String userEmail;
@@ -32,6 +32,7 @@ public class StateController
 
     /**
      * The list of currently loaded emails
+     *
      * @see Email
      * @see EmailController
      */
@@ -45,7 +46,7 @@ public class StateController
     /**
      * Holds the state of the list emails loop
      */
-    private String[] listingState = {"READ","SKIP", "DELETE"};
+    private String[] listingState = {"READ", "SKIP", "DELETE"};
 
     /**
      * Accumulates the message body
@@ -76,64 +77,72 @@ public class StateController
      * for repeat method.  Either repeat subject/sender or actual message.
      */
     private boolean readingState;
+    private boolean replyState;
+
+
+    /**
+     * Checking if we want to send as draft
+     */
+    private boolean sendAsDraft;
 
     /**
      * Create the StateController
+     *
      * @param mainActivity Reference to the MainActivity core class of the app
-     * @param context @todo what is Context? Why do we need it? for VC
-     * @param activity @todo what is an Activity? Why do we need it? for VC
-     * @param service Service object for accessing the Gmail API; needed by EmailController
+     * @param context      @todo what is Context? Why do we need it? for VC
+     * @param activity     @todo what is an Activity? Why do we need it? for VC
+     * @param service      Service object for accessing the Gmail API; needed by EmailController
      * @see MainActivity
      * @see Context
      * @see Activity
      * @see Gmail
      * @see EmailController
      */
-    StateController(MainActivity mainActivity, Context context, Activity activity, Gmail service)
-    {
+    StateController(MainActivity mainActivity, Context context, Activity activity, Gmail service) {
         this.master = mainActivity;
-        //this.mService = service; TODO remove maybe
         this.counter = -1;
+        this.listOptions = SettingsController.getSkipCommands();
         messageBody = "";
         fetchNumber = 0;
         emails = new ArrayList<Email>();
 
         emailController = new EmailController(this, service);
         voiceController = new VoiceController(context, activity, this);
-        //settings = new SettingsController();
-
-        emailController.getNewEmails(INITIAL_FETCH_NUMBER, true);
+        emailController.getNewEmails(INITIAL_FETCH_NUMBER, false);
     }
 
     /**
      * Callback function which is called when emails are retrieved from the EmailController
+     *
      * @see EmailController
      */
-    public void onEmailsRetrieved()
-    {
+    public void onEmailsRetrieved() {
         readNextEmail();
     }
 
     /**
      * Read the next email in the list out loud and provide the user with options
      */
-    private void readNextEmail()
-    {
+    private void readNextEmail() {
         counter++;
         readingState = false;
-//        if (counter == emails.size()) {
-//            voiceController.textToSpeech("You are out of emails. Please restart the app");
-//            return;
+        replyState = false;
+        if (counter == emails.size()) {
+            voiceController.textToSpeech("You are out of emails. Please restart the app");
+            return;
+        }
         if (counter >= emails.size() - 5) {
-            emailController.fetchNewEmails(emails, SUBSEQUENT_FETCH_NUMBER, false);
+            emailController.fetchNewEmails(emails, SUBSEQUENT_FETCH_NUMBER, SettingsController.getSkipRead());
         }
         Email curEmail = emails.get(counter);
-        String output = "New email from " + emailController.getNameFromRecipient(curEmail.getFrom()) + " with the subject " + curEmail.getSubject() + ". Would you like to read, repeat, skip or delete?";
-        String[] possibleInputs = new String[4];
+        String output = "New email from " + emailController.getNameFromRecipient(curEmail.getFrom()) + " with the subject " + curEmail.getSubject() +
+                ((listOptions) ? ". Would you like to read, repeat, skip, save, or delete?" : ".");
+        String[] possibleInputs = new String[5];
         possibleInputs[0] = "SKIP";
         possibleInputs[1] = "DELETE";
         possibleInputs[2] = "READ";
-        possibleInputs[3] = "REPEAT";
+        possibleInputs[3] = "SAVE";
+        possibleInputs[4] = "REPEAT";
 
         //if queueTTS is true, do not cut off the last tts call. (mainly "email sent" or "email deleted")
         if (queueTextToSpeech) {
@@ -149,24 +158,37 @@ public class StateController
     /**
      * Delete the current email
      */
-    public void onCommandDelete()
-    {
+    public void onCommandDelete() {
         emailController.deleteEmail(emails.get(counter).getID());
+        voiceController.textToSpeech("The email was deleted");
+        queueTextToSpeech = true;
+        readNextEmail();
+    }
+
+    /**
+     * Save the current email
+     */
+    public void onCommandSave() {
+        emailController.saveEmail(emails.get(counter));
+        voiceController.textToSpeech("The email was saved");
+        queueTextToSpeech = true;
         readNextEmail();
     }
 
     /**
      * Read the message body of the current email
      */
-    public void onCommandRead()
-    {
-        VoiceController.textToSpeech(emails.get(counter).getMessage() + " Would you like to reply, repeat, skip or delete?");
-        String[] possibleInputs = new String[5];
+    public void onCommandRead() {
+        String output = emails.get(counter).getMessage() +
+                ((listOptions) ? ". Would you like to reply, repeat, skip, save, or delete? if you would like to reply all, say everyone" : ".");
+        VoiceController.textToSpeech(output);
+        String[] possibleInputs = new String[6];
         possibleInputs[0] = "SKIP";
         possibleInputs[1] = "DELETE";
         possibleInputs[2] = "REPLY";
         possibleInputs[3] = "REPEAT";
         possibleInputs[4] = "EVERYONE";
+        possibleInputs[5] = "SAVE";
         readingState = true;
         voiceController.startListening(possibleInputs);
     }
@@ -174,18 +196,24 @@ public class StateController
     /**
      * Skip/Do Nothing with the current email
      */
-    public void onCommandSkip() { readNextEmail(); }
+    public void onCommandSkip() {
+        readNextEmail();
+    }
 
     /**
-     *Repeat what was said on either readNextEmail or onCommandRead.
+     * Repeat what was said on either readNextEmail or onCommandRead.
      */
     public void onCommandRepeat() {
-        if(!readingState) {
-            counter--;
-            readNextEmail();
+
+        if(readingState){
+            onCommandRead();
+        }
+        else if(replyState){
+            onReplyAnswered(messageBody);
         }
         else{
-            onCommandRead();
+            counter--;
+            readNextEmail();
         }
 
     }
@@ -193,8 +221,7 @@ public class StateController
     /**
      * Compose a new email as a reply to the current one
      */
-    public void onCommandReply()
-    {
+    public void onCommandReply() {
         replyAll = false;
         VoiceController.textToSpeech("Please state your desired message.");
         String[] possibleInputs = new String[0];
@@ -204,10 +231,9 @@ public class StateController
     /**
      * As onCommandReply, but replies to all senders
      */
-    public void onCommandReplyAll()
-    {
+    public void onCommandReplyAll() {
         replyAll = true;
-        VoiceController.textToSpeech("Please state your desired message.");
+        VoiceController.textToSpeech("Please state your desired message for reply all.");
         String[] possibleInputs = new String[0];
         voiceController.startListening(possibleInputs);
     }
@@ -215,35 +241,36 @@ public class StateController
     /**
      * Receives a reply from VC once VC assumes that the reply was completed, then repeats the reply recorded.
      * User then decides to skip, change, continue, or send the reply.
+     *
      * @param message Reply recorded on VoiceController
      */
-    public void onReplyAnswered(String message)
-    {
-        if(continueMessage)
-        {
+    public void onReplyAnswered(String message) {
+        if (continueMessage) {
             this.messageBody = messageBody + " " + message;
             continueMessage = false;
-        } else
-        {
+        } else {
             this.messageBody = message;
         }
 
-        VoiceController.textToSpeech("Your message was recorded as: " + messageBody + " Would you like to skip, change, continue, or send?");
-        String[] possibleInputs = new String[4];
+        VoiceController.textToSpeech("Your message was recorded as: " + messageBody +
+                        ((listOptions) ? ". Would you like to skip, draft, change, continue, repeat, or send?" : "."));
+        String[] possibleInputs = new String[6];
         possibleInputs[0] = "SEND";
         possibleInputs[1] = "CHANGE";
         possibleInputs[2] = "SKIP";
         possibleInputs[3] = "CONTINUE";
+        possibleInputs[4] = "DRAFT";
+        possibleInputs[5] = "REPEAT";
+        replyState = true;
         voiceController.startListening(possibleInputs);
     }
 
     /**
      * Send the recorded reply.  4/18 - currently saves the reply to a draft.
      */
-    public void onCommandSend()
-    {
+    public void onCommandSend() {
         Email curEmail = emails.get(counter);
-        emailController.sendEmail(curEmail, messageBody, replyAll);
+        emailController.sendEmail(curEmail, messageBody, replyAll, !sendAsDraft);
         VoiceController.textToSpeech("The Email was sent");
         queueTextToSpeech = true;
         readNextEmail();
@@ -252,25 +279,33 @@ public class StateController
     /**
      * Change the email being composed
      */
-    public void onCommandChange() { onCommandReply(); }
+    public void onCommandChange() {
+        onCommandReply();
+    }
 
     /**
      * Appends a new message to the previous reply.
      */
-    public void onCommandContinue()
-    {
+    public void onCommandContinue() {
         VoiceController.textToSpeech("Please continue your message");
         continueMessage = true;
         String[] possibleInputs = new String[0];
         voiceController.startListening(possibleInputs);
     }
+    public void onCommandDraft(){
+        Email curEmail = emails.get(counter);
+        emailController.sendEmail(curEmail, messageBody, replyAll, sendAsDraft);
+        VoiceController.textToSpeech("The Email was drafted");
+        queueTextToSpeech = true;
+        readNextEmail();
+    }
 
     /**
      * Clean up anything needed to safely destroy the app
      */
-    public void onDestroy()
-    {
+    public void onDestroy() {
         VoiceController.textToSpeech("");
         voiceController.stopListening();
     }
+
 }

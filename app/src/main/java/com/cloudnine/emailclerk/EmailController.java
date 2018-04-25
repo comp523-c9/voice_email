@@ -1,7 +1,6 @@
 package com.cloudnine.emailclerk;
 
 import android.os.AsyncTask;
-import android.text.TextUtils;
 
 import javax.mail.Session;
 import javax.mail.internet.InternetAddress;
@@ -33,6 +32,13 @@ public class EmailController {
     private com.google.api.services.gmail.Gmail mService;
     StateController stateController;
 
+    /** EmailController keeps a one-time reference to all Labels (w/ their name and id, etc)
+     *  If expanded upon, Label could be made its own class and this functionality could be moved
+     *  to StateController. With the current scope of the project, it makes sense to keep it all
+     *  in EmailController
+     */
+    List<Label> allLabels = new ArrayList<>();
+
     /** Constructor takes a reference to post
      * @StateController and the Gmail service object to use in API calls
      * **/
@@ -59,23 +65,13 @@ public class EmailController {
         new AsyncDeleteEmail().execute(params);
     }
 
-    /** sendEmail() is overloaded. This is the 'compose' one **/
-    public void sendEmail(String toAddress, String fromAddress, String subject, String messageBody) {
-        List<String> paramsList = new ArrayList<String>();
-        paramsList.add(toAddress);
-        paramsList.add(fromAddress);
-        paramsList.add(subject);
-        paramsList.add(messageBody);
-
-        String[] params = new String[paramsList.size()];
-        params = paramsList.toArray(params);
-
-        new AsyncComposeEmail().execute(params);
+    /** This is the reply one **/
+    public void sendEmail(Email email, String messageBody, boolean replyAll, boolean sendAsDraft, boolean includeSig) {
+        new AsyncReplyToEmail(email, replyAll, sendAsDraft, includeSig).execute(messageBody);
     }
 
-    /** This is the reply one **/
-    public void sendEmail(Email email, String messageBody, boolean replyAll) {
-        new AsyncReplyToEmail(email, replyAll).execute(messageBody);
+    public void saveEmail(Email email) {
+        new AsyncMoveEmail(email.getID(), email.getLabelList()).execute();
     }
 
     public void fetchNewEmails(List<Email> emails, int fetchNum, boolean unreadOnly) {
@@ -197,6 +193,8 @@ public class EmailController {
 
             ListMessagesResponse listResponse;
 
+            ListLabelsResponse listLabelsReponse = mService.users().labels().list("me").execute();
+            allLabels = listLabelsReponse.getLabels();
 
             if (getNewBatch.equals("false")) { // If not first batch...
                 listResponse = mService.users().messages().list("me").setLabelIds(labels).setMaxResults(new Long(num)).execute();
@@ -304,11 +302,13 @@ public class EmailController {
                         for (int y=0; y<messageParts.size(); y++) {
                             messageBody += messageParts.get(y) + " ";
                         }
-                    } catch (Exception e) {
-
+                    } catch (NullPointerException e) {
+                        messageBody = "An error was found while trying to parse the message body";
                     }
                 }
-                
+
+                /** If no message body is found, set it to the snippet if it exists, else say there's
+                 *  no message body **/
                 if (messageBody.equals("")) {
                     messageBody = curMessage.getSnippet();
                     if (messageBody.equals("")) {
@@ -316,9 +316,12 @@ public class EmailController {
                     }
                 }
 
+                /** Lastly, get the email labels **/
+                List<String> labelList = curMessage.getLabelIds();
+
                 /** After all the email info we want is retrieved, create a new
                  * @Email object and add it to emailList **/
-                emailList.add(new Email(id, threadId, from, toList, ccList, deliveredTo, subject, messageBody, date));
+                emailList.add(new Email(id, threadId, from, toList, ccList, deliveredTo, subject, messageBody, date, labelList));
 
             }
 
@@ -371,7 +374,7 @@ public class EmailController {
         protected void onPostExecute(List<Email> output) {
             if (output != null && output.size() != 0) {
                 stateController.emails.addAll(output);
-                if (stateController.emails.size()==stateController.INITIAL_FETCH_NUMBER) {
+                if (stateController.emails.size()<=stateController.INITIAL_FETCH_NUMBER) {
                     stateController.onEmailsRetrieved();
                 }
             }
@@ -386,10 +389,14 @@ public class EmailController {
         Exception mLastError;
         Email email;
         boolean replyAll;
+        boolean sendAsDraft;
+        boolean includeSig;
 
-        AsyncReplyToEmail(Email email, boolean replyAll) {
+        AsyncReplyToEmail(Email email, boolean replyAll, boolean sendAsDraft, boolean includeSig) {
             this.email = email;
             this.replyAll = replyAll;
+            this.sendAsDraft = sendAsDraft;
+            this.includeSig = includeSig;
             mLastError = null;
         }
 
@@ -492,7 +499,12 @@ public class EmailController {
                     mimeMessage.setSubject("Re: " + subject);
                 }
 
-                /** Set message body... **/
+                /** Add a message indicating it's from Email Clerk if setting is passed **/
+                if (includeSig) {
+                    messageBody += "\n Sent using Email Clerk (A voice-driven Email application)";
+                }
+
+                /** Set message body and other headers **/
                 mimeMessage.setText(messageBody);
                 mimeMessage.setHeader("In-Reply-To", email.getID());
                 mimeMessage.setHeader("References", email.getID());
@@ -503,9 +515,16 @@ public class EmailController {
                 String encodedEmail = Base64.encodeBase64URLSafeString(bytes);
                 com.google.api.services.gmail.model.Message message = new com.google.api.services.gmail.model.Message();
                 message.setRaw(encodedEmail);
-                Draft draft = new Draft();
-                draft.setMessage(message);
-                mService.users().drafts().create("me", draft).execute();
+
+                /** Send as Draft or actual Email depending on input **/
+                if (sendAsDraft) {
+                    Draft draft = new Draft();
+                    draft.setMessage(message);
+                    mService.users().drafts().create("me", draft).execute();
+                } else {
+                    mService.users().messages().send("me", message).execute();
+                }
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -592,5 +611,72 @@ public class EmailController {
         }
     }
 
+    private class AsyncMoveEmail extends AsyncTask<Void, Void, Void> {
 
+        String messageId;
+        List<String> labelList;
+        Exception mLastError;
+
+        AsyncMoveEmail(String messageId, List<String> labelList) {
+            this.messageId = messageId;
+            this.labelList = labelList;
+            mLastError = null;
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+
+            try {
+
+                /** Create a list of labels ids to add and remove **/
+                List<String> labelIdsToAdd = new ArrayList<>();
+                List<String> labelIdsToRemove = new ArrayList<>();
+
+                /** Add the label id of the Email Clerk label **/
+                for (int i=0; i<allLabels.size(); i++) {
+                    if (allLabels.get(i).getName().equals("Email Clerk")) {
+                        labelIdsToAdd.add(allLabels.get(i).getId());
+                    }
+                }
+
+                /** If an Email Clerk label hasn't been found, make one and search again for the Id **/
+                if (labelIdsToAdd.size() == 0) {
+                    Label label = new Label().setName("Email Clerk").setLabelListVisibility("labelShow").setMessageListVisibility("show");
+                    mService.users().labels().create("me", label).execute();
+
+                    allLabels = mService.users().labels().list("me").execute().getLabels();
+
+                    for (int i=0; i<allLabels.size(); i++) {
+                        if (allLabels.get(i).getName().equals("Email Clerk")) {
+                            labelIdsToAdd.add(allLabels.get(i).getId());
+                        }
+                    }
+                }
+
+                /** Populate labelIdsToRemove by checking for names in labelsList **/
+                for (int i=0; i<labelList.size(); i++) {
+                    for (int j=0; j<allLabels.size(); j++) {
+                        if (allLabels.get(j).getName().equals(labelList.get(i))) {
+                            labelIdsToRemove.add(allLabels.get(j).getId());
+                        }
+                    }
+                }
+
+                /** Remove SENT label if going to be removed **/
+                for (int i=0; i<labelIdsToRemove.size(); i++) {
+                    if (labelIdsToRemove.get(i).equals("SENT")) {
+                        labelIdsToRemove.remove(i);
+                    }
+                }
+
+                ModifyMessageRequest mods = new ModifyMessageRequest().setAddLabelIds(labelIdsToAdd).setRemoveLabelIds(labelIdsToRemove);
+                mService.users().messages().modify("me", messageId, mods).execute();
+            } catch (Exception e) {
+                mLastError = e;
+                cancel(true);
+                return null;
+            }
+            return null;
+        }
+    }
 }

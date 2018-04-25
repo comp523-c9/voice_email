@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
@@ -24,6 +25,8 @@ import java.util.Locale;
 
 public class VoiceController implements
         RecognitionListener {
+
+    public static float tts_speed = 0;
 
     private String LOG_TAG = "VoiceRecognitionActivity";
     private static final int REQUEST_RECORD_PERMISSION = 100; //for mic permission
@@ -50,11 +53,9 @@ public class VoiceController implements
 
     /** Retrieves the TTS speed value from the persistent SharedPreferences object
      * @author Andrew Gill**/
-    private static float getSpeedFlt(){
-        SharedPreferences settings = context.getSharedPreferences(MainActivity.PREFS_NAME,0);
-        float data =settings.getFloat("speedflt",10);
-        return data/10; // values from 1-20 from seekBar become 0.1-2.0 to work with tts.SpeechRate
-    }
+//    private static float getSpeedFlt(){
+//        return tts_speed;
+//    }
 
     public VoiceController(Context context, Activity activity, StateController stateController)
 
@@ -102,14 +103,14 @@ public class VoiceController implements
                 @Override
                 public void onInit(int i) {
                     tts.setLanguage(Locale.US);
-                    float spdflt = getSpeedFlt();
+                    float spdflt = SettingsController.getSpeedFlt(context);
                     tts.setSpeechRate(spdflt);
                     tts.speak(inputs, TextToSpeech.QUEUE_FLUSH, params);
                 }
             });
         }
         else{
-            float spdflt = getSpeedFlt();
+            float spdflt = SettingsController.getSpeedFlt(context);
             tts.setSpeechRate(spdflt);
             tts.speak(input, TextToSpeech.QUEUE_FLUSH, params);
 
@@ -129,14 +130,14 @@ public class VoiceController implements
                 @Override
                 public void onInit(int i) {
                     tts.setLanguage(Locale.US);
-                    float spdflt = getSpeedFlt();
+                    float spdflt = SettingsController.getSpeedFlt(context);
                     tts.setSpeechRate(spdflt);
                     tts.speak(inputs, TextToSpeech.QUEUE_ADD, params);
                 }
             });
         }
         else{
-            float spdflt = getSpeedFlt();
+            float spdflt = SettingsController.getSpeedFlt(context);
             tts.setSpeechRate(spdflt);
             tts.speak(input, TextToSpeech.QUEUE_ADD, params);
         }
@@ -231,39 +232,42 @@ public class VoiceController implements
                 if (singlePartialResult.toUpperCase().contains(validCommands[i])) {
                     MainActivity.returnedText.setText(singlePartialResult);
                     singlePartialResult = "";
-                    if (validCommands[i].toUpperCase().contains("READ")) {
-                        stateController.onCommandRead();
-                        break;
-                    } else if (validCommands[i].toUpperCase().contains("SKIP")) {
-                        stateController.onCommandSkip();
-                        break;
-                    } else if (validCommands[i].toUpperCase().contains("DELETE")) {
-                        stateController.onCommandDelete();
-                        break;
-                    } else if (validCommands[i].toUpperCase().contains("REPLY")) {
-                        stateController.onCommandReply();
-                        break;
-                    } else if (validCommands[i].toUpperCase().contains("EVERYONE")) {
-                        stateController.onCommandReplyAll();
-                        break;
-                    } else if (validCommands[i].toUpperCase().contains("CHANGE")) {
-                        stateController.onCommandChange();
-                        break;
-                    } else if (validCommands[i].toUpperCase().contains("SEND")) {
-                        stateController.onCommandSend();
-                        break;
-                    } else if (validCommands[i].toUpperCase().contains("CONTINUE")) {
-                        stateController.onCommandContinue();
-                        break;
-                    } else if (validCommands[i].toUpperCase().contains("REPEAT")) {
-                        stateController.onCommandRepeat();
-                        break;
+                    switch (validCommands[i].toUpperCase()){
+                        case "READ":
+                            stateController.onCommandRead();
+                            break;
+                        case "SKIP":
+                            stateController.onCommandSkip();
+                            break;
+                        case "DELETE":
+                            stateController.onCommandDelete();
+                            break;
+                        case "REPLY":
+                            stateController.onCommandReply();
+                            break;
+                        case "EVERYONE":
+                            stateController.onCommandReplyAll();
+                            break;
+                        case "CHANGE":
+                            stateController.onCommandChange();
+                            break;
+                        case "SEND":
+                            stateController.onCommandSend();
+                            break;
+                        case "CONTINUE":
+                            stateController.onCommandContinue();
+                            break;
+                        case "REPEAT":
+                            stateController.onCommandRepeat();
+                            break;
+                        case "DRAFT":
+                            stateController.onCommandDraft();
+                            break;
+                        case "SAVE":
+                            stateController.onCommandSave();
+                            break;
                     }
-
-
-
                 }
-
         }
     }
 
