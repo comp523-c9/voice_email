@@ -180,8 +180,9 @@ public class StateController {
         String output = emails.get(counter).getMessage() +
                 (!(SettingsController.getSkipCommands(context)) ? ". Would you like to reply, reply to everyone, repeat, skip, save, or delete?" : ".");
 
-        if (output.length() > 2000) {
-            VoiceController.textToSpeech(output.substring(0, 2000));
+        /** TODO implement a better way of continuing to read message with breakIntoChunks() helper method **/
+        if (output.length() > 4000) {
+            VoiceController.textToSpeech(output.substring(0, 3000));
         } else {
             VoiceController.textToSpeech(output);
         }
