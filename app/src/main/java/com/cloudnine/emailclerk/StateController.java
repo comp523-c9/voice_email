@@ -2,6 +2,7 @@ package com.cloudnine.emailclerk;
 
 import android.app.Activity;
 import android.content.Context;
+import android.speech.tts.Voice;
 
 import com.google.api.services.gmail.Gmail;
 
@@ -84,10 +85,15 @@ public class StateController {
 
     private String[] onNextEmailState = {"SKIP", "DELETE", "READ", "SAVE", "REPEAT", "COMMANDS"};
 
-    private String[] onReadState = {"SKIP","DELETE","REPLY","REPEAT","EVERYONE","SAVE","COMMANDS"};
+    private String[] onReadState = {"SKIP","MORE","DELETE","REPLY","REPEAT","EVERYONE","SAVE","COMMANDS"};
 
     private String[] onReplyState = {"SEND","CHANGE","SKIP","CONTINUE","DRAFT","REPEAT","COMMANDS"};
 
+    private String[] onChunkState = {"SKIP","MORE","PREVIOUS","DELETE","REPLY","REPEAT","EVERYONE","SAVE","COMMANDS"};
+
+    private String[] chunks;
+
+    private int messageBodyCounter;
     /**
      * Create the StateController
      *
@@ -104,6 +110,7 @@ public class StateController {
     StateController(MainActivity mainActivity, Context context, Activity activity, Gmail service) {
         this.master = mainActivity;
         this.counter = -1;
+        this.messageBodyCounter = 0;
         messageBody = "";
         fetchNumber = 0;
 
@@ -178,7 +185,8 @@ public class StateController {
      */
     public void onCommandRead() {
         String output = emails.get(counter).getMessage() +
-                (!(SettingsController.getSkipCommands(context)) ? ". Would you like to reply, reply to everyone, repeat, skip, save, or delete?" : ".");
+                (!(SettingsController.getSkipCommands(context)) ? ". Would you like to reply, reply to everyone, read more, repeat, skip, save, or delete?" : ".");
+
 
         /** TODO implement a better way of continuing to read message with breakIntoChunks() helper method **/
         if (output.length() > 4000) {
@@ -294,6 +302,31 @@ public class StateController {
 //    public void onCommandCommands(){
 //
 //    }
+
+    public void onCommandMore(){
+        messageBodyCounter++;
+        if(chunks.length <= messageBodyCounter){
+            VoiceController.textToSpeech("Reached the end of message");
+            voiceController.startListening(onChunkState);
+        }
+        else{
+            String input = chunks[messageBodyCounter] + "Would you like to read more, read previous chunk, skip, reply, delete, save, or repeat?";
+            VoiceController.textToSpeech(input);
+            voiceController.startListening(onChunkState);
+        }
+    }
+    public void onCommandPrevious(){
+        messageBodyCounter--;
+        if(messageBodyCounter<0){
+            VoiceController.textToSpeech("Reached the start of message");
+            voiceController.startListening(onChunkState);
+        }
+        else{
+            String input = chunks[messageBodyCounter] + "Would you like to read more, read previous chunk, skip, reply, delete, save, or repeat?";
+            VoiceController.textToSpeech(input);
+            voiceController.startListening(onChunkState);
+        }
+    }
     /**
      * Clean up anything needed to safely destroy the app
      */
