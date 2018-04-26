@@ -297,4 +297,25 @@ public class StateController {
         voiceController.stopListening();
     }
 
+    /** Helper method that breaks a large message body (greater than a certain character limit
+     * into multiple smaller Strings with correct commands listed at the end **/
+    private List<String> breakMessageIntoParts(String input, int chunkSize) {
+        List<String> chunks = new ArrayList<>();
+        int pointer = chunkSize; /** pointer for input String **/
+        String commandMessage = ". Would you like to read more, read previous chunk, reply, reply to everyone, repeat, skip, save, or delete?";
+        String lastCommandMessage = ". Would you like to read previous, reply, reply to everyone, repeat, skip, save, or delete?";
+
+        while((pointer - chunkSize) < input.length()) {
+
+            if (pointer < input.length()) {
+                chunks.add(input.substring(pointer-chunkSize, pointer) + commandMessage);
+            } else {
+                chunks.add(input.substring(pointer-chunkSize) + lastCommandMessage);
+            }
+            pointer += chunkSize;
+        }
+
+        return chunks;
+    }
+
 }
