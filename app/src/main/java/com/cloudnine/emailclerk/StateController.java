@@ -104,6 +104,7 @@ public class StateController {
     StateController(MainActivity mainActivity, Context context, Activity activity, Gmail service) {
         this.master = mainActivity;
         this.counter = -1;
+        listOptions = SettingsController.getSkipCommands(context);
         messageBody = "";
         fetchNumber = 0;
 
@@ -139,7 +140,7 @@ public class StateController {
         }
         Email curEmail = emails.get(counter);
         String output = "New email from " + emailController.getNameFromRecipient(curEmail.getFrom()) + " with the subject " + curEmail.getSubject() +
-                (!(SettingsController.getSkipCommands(context)) ? ". Would you like to read, repeat, skip, save, or delete?" : ".");
+                ((!listOptions) ? ". Would you like to read, repeat, skip, save, or delete?" : ".");
 
 
         //if queueTTS is true, do not cut off the last tts call. (mainly "email sent" or "email deleted")
@@ -178,7 +179,7 @@ public class StateController {
      */
     public void onCommandRead() {
         String output = emails.get(counter).getMessage() +
-                (!(SettingsController.getSkipCommands(context)) ? ". Would you like to reply, reply to everyone, repeat, skip, save, or delete?" : ".");
+                (!listOptions ? ". Would you like to reply, reply to everyone, repeat, skip, save, or delete?" : ".");
 
         /** TODO implement a better way of continuing to read message with breakIntoChunks() helper method **/
         if (output.length() > 4000) {
@@ -251,7 +252,7 @@ public class StateController {
         }
 
         VoiceController.textToSpeech("Your message was recorded as: " + messageBody +
-                        (!(SettingsController.getSkipCommands(context)) ? ". Would you like to skip, draft, change, continue, repeat, or send?" : "."));
+                        (!listOptions ? ". Would you like to skip, draft, change, continue, repeat, or send?" : "."));
         replyState = true;
         voiceController.startListening(onReplyState);
     }
