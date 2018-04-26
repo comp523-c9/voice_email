@@ -20,6 +20,7 @@ import java.util.*;
 public class StateController {
 
     private MainActivity master;
+    private static Context context;
     private VoiceController voiceController;
     private EmailController emailController;
     private Boolean listOptions = true;
@@ -101,7 +102,7 @@ public class StateController {
     StateController(MainActivity mainActivity, Context context, Activity activity, Gmail service) {
         this.master = mainActivity;
         this.counter = -1;
-        this.listOptions = SettingsController.getSkipCommands();
+        this.listOptions = SettingsController.getSkipCommands(context);
         messageBody = "";
         fetchNumber = 0;
         emails = new ArrayList<Email>();
@@ -132,7 +133,7 @@ public class StateController {
             return;
         }
         if (counter >= emails.size() - 5) {
-            emailController.fetchNewEmails(emails, SUBSEQUENT_FETCH_NUMBER, SettingsController.getSkipRead());
+            emailController.fetchNewEmails(emails, SUBSEQUENT_FETCH_NUMBER, SettingsController.getSkipRead(context));
         }
         Email curEmail = emails.get(counter);
         String output = "New email from " + emailController.getNameFromRecipient(curEmail.getFrom()) + " with the subject " + curEmail.getSubject() +
@@ -270,7 +271,7 @@ public class StateController {
      */
     public void onCommandSend() {
         Email curEmail = emails.get(counter);
-        emailController.sendEmail(curEmail, messageBody, replyAll, !sendAsDraft, SettingsController.getIncludeSig());
+        emailController.sendEmail(curEmail, messageBody, replyAll, !sendAsDraft, SettingsController.getIncludeSig(context));
         VoiceController.textToSpeech("The Email was sent");
         queueTextToSpeech = true;
         readNextEmail();
@@ -294,7 +295,7 @@ public class StateController {
     }
     public void onCommandDraft(){
         Email curEmail = emails.get(counter);
-        emailController.sendEmail(curEmail, messageBody, replyAll, sendAsDraft, SettingsController.getIncludeSig());
+        emailController.sendEmail(curEmail, messageBody, replyAll, sendAsDraft, SettingsController.getIncludeSig(context));
         VoiceController.textToSpeech("The Email was drafted");
         queueTextToSpeech = true;
         readNextEmail();

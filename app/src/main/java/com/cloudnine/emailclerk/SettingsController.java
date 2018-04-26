@@ -36,24 +36,24 @@ public class SettingsController extends AppCompatActivity {
     private static Context context; //MainActivity's context
 
 
-    public static float getSpeedFlt(Context context1){
-        SharedPreferences settings = context1.getSharedPreferences(MainActivity.PREFS_NAME,0);
+    public static float getSpeedFlt(Context currcontext){
+        SharedPreferences settings = currcontext.getSharedPreferences(MainActivity.PREFS_NAME,0);
         float fltval =settings.getFloat("speedflt",10);
         return fltval/10;
     }
 
-    public static boolean getSkipRead(){
-        SharedPreferences settings = context.getSharedPreferences(MainActivity.PREFS_NAME,0);
+    public static boolean getSkipRead(Context currcontext){
+        SharedPreferences settings = currcontext.getSharedPreferences(MainActivity.PREFS_NAME,0);
         boolean skipRead = settings.getBoolean("skipread",false);
         return skipRead;
     }
-    public static boolean getIncludeSig(){
-        SharedPreferences settings = context.getSharedPreferences(MainActivity.PREFS_NAME,0);
+    public static boolean getIncludeSig(Context currcontext){
+        SharedPreferences settings = currcontext.getSharedPreferences(MainActivity.PREFS_NAME,0);
         boolean sigIncluded = settings.getBoolean("sigadded",false);
         return sigIncluded;
     }
-    public static boolean getSkipCommands(){
-        SharedPreferences settings = context.getSharedPreferences(MainActivity.PREFS_NAME,0);
+    public static boolean getSkipCommands(Context currcontext){
+        SharedPreferences settings = currcontext.getSharedPreferences(MainActivity.PREFS_NAME,0);
         boolean commandsSkipped = settings.getBoolean("skipcommands",false);
         return commandsSkipped;
     }
