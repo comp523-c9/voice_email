@@ -44,10 +44,6 @@ public class StateController {
      */
     private int counter;
 
-    /**
-     * Holds the state of the list emails loop
-     */
-    private String[] listingState = {"READ", "SKIP", "DELETE"};
 
     /**
      * Accumulates the message body
@@ -86,6 +82,12 @@ public class StateController {
      */
     private boolean sendAsDraft;
 
+    private String[] onNextEmailState = {"SKIP", "DELETE", "READ", "SAVE", "REPEAT", "COMMANDS"};
+
+    private String[] onReadState = {"SKIP","DELETE","REPLY","REPEAT","EVERYONE","SAVE","COMMANDS"};
+
+    private String[] onReplyState = {"SEND","CHANGE","SKIP","CONTINUE","DRAFT","REPEAT","COMMANDS"};
+
     /**
      * Create the StateController
      *
@@ -102,9 +104,9 @@ public class StateController {
     StateController(MainActivity mainActivity, Context context, Activity activity, Gmail service) {
         this.master = mainActivity;
         this.counter = -1;
-        this.listOptions = SettingsController.getSkipCommands(context);
         messageBody = "";
         fetchNumber = 0;
+
         emails = new ArrayList<Email>();
 
         emailController = new EmailController(this, service);
@@ -137,13 +139,8 @@ public class StateController {
         }
         Email curEmail = emails.get(counter);
         String output = "New email from " + emailController.getNameFromRecipient(curEmail.getFrom()) + " with the subject " + curEmail.getSubject() +
-                ((listOptions) ? ". Would you like to read, repeat, skip, save, or delete?" : ".");
-        String[] possibleInputs = new String[5];
-        possibleInputs[0] = "SKIP";
-        possibleInputs[1] = "DELETE";
-        possibleInputs[2] = "READ";
-        possibleInputs[3] = "SAVE";
-        possibleInputs[4] = "REPEAT";
+                (!(SettingsController.getSkipCommands(context)) ? ". Would you like to read, repeat, skip, save, or delete?" : ".");
+
 
         //if queueTTS is true, do not cut off the last tts call. (mainly "email sent" or "email deleted")
         if (queueTextToSpeech) {
@@ -153,7 +150,7 @@ public class StateController {
             VoiceController.textToSpeech(output);
         }
 
-        voiceController.startListening(possibleInputs);
+        voiceController.startListening(onNextEmailState);
     }
 
     /**
@@ -181,17 +178,12 @@ public class StateController {
      */
     public void onCommandRead() {
         String output = emails.get(counter).getMessage() +
-                ((listOptions) ? ". Would you like to reply, reply to everyone, repeat, skip, save, or delete?" : ".");
+                (!(SettingsController.getSkipCommands(context)) ? ". Would you like to reply, reply to everyone, repeat, skip, save, or delete?" : ".");
+
         VoiceController.textToSpeech(output);
-        String[] possibleInputs = new String[6];
-        possibleInputs[0] = "SKIP";
-        possibleInputs[1] = "DELETE";
-        possibleInputs[2] = "REPLY";
-        possibleInputs[3] = "REPEAT";
-        possibleInputs[4] = "EVERYONE";
-        possibleInputs[5] = "SAVE";
+
         readingState = true;
-        voiceController.startListening(possibleInputs);
+        voiceController.startListening(onReadState);
     }
 
     /**
@@ -254,16 +246,9 @@ public class StateController {
         }
 
         VoiceController.textToSpeech("Your message was recorded as: " + messageBody +
-                        ((listOptions) ? ". Would you like to skip, draft, change, continue, repeat, or send?" : "."));
-        String[] possibleInputs = new String[6];
-        possibleInputs[0] = "SEND";
-        possibleInputs[1] = "CHANGE";
-        possibleInputs[2] = "SKIP";
-        possibleInputs[3] = "CONTINUE";
-        possibleInputs[4] = "DRAFT";
-        possibleInputs[5] = "REPEAT";
+                        (!(SettingsController.getSkipCommands(context)) ? ". Would you like to skip, draft, change, continue, repeat, or send?" : "."));
         replyState = true;
-        voiceController.startListening(possibleInputs);
+        voiceController.startListening(onReplyState);
     }
 
     /**
@@ -301,6 +286,9 @@ public class StateController {
         readNextEmail();
     }
 
+//    public void onCommandCommands(){
+//
+//    }
     /**
      * Clean up anything needed to safely destroy the app
      */
