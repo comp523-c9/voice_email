@@ -291,9 +291,14 @@ public class EmailController {
                  * **/
                 String messageBody = "";
 
-                if (curMessage.getPayload().getMimeType().equals("text/plain")) {
-                    String message = StringUtils.newStringUtf8(Base64.decodeBase64(curMessage.getPayload().getBody().getData().trim().toString()));
-                    messageBody = message.replaceAll("(\r\n|\n\r|\n|\r)", "");
+                if (curMessage.getPayload().getMimeType().contains("text")) {
+                    if (curMessage.getPayload().getMimeType().equals("text/html")) {
+                        messageBody = curMessage.getSnippet();
+                    } else {
+                        String message = StringUtils.newStringUtf8(Base64.decodeBase64(curMessage.getPayload().getBody().getData().trim().toString()));
+                        messageBody = message.replaceAll("(\r\n|\n\r|\n|\r)", "");
+                    }
+
                 } else {
                     try {
                         List<String> messageParts = new ArrayList<String>();

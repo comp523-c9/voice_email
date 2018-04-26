@@ -181,7 +181,7 @@ public class StateController {
      */
     public void onCommandRead() {
         String output = emails.get(counter).getMessage() +
-                ((listOptions) ? ". Would you like to reply, repeat, skip, save, or delete? if you would like to reply all, say everyone" : ".");
+                ((listOptions) ? ". Would you like to reply, reply to everyone, repeat, skip, save, or delete?" : ".");
         VoiceController.textToSpeech(output);
         String[] possibleInputs = new String[6];
         possibleInputs[0] = "SKIP";
